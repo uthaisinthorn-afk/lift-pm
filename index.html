@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="th"><head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<style>
+/* Layout: a hoistway-style column — sticky control bar, status strip, then a dense list of cars; panels slide over on phones */
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --ink:#15202b; --muted:#5b6873; --line:#d5dbe0;
+  --steel:#1f3a4d; --accent:#d48a00; --accent-ink:#1b1300;
+  --ok:#1d7a46; --ok-bg:#e3f3ea; --warn:#9a6200; --warn-bg:#fdf1d8; --bad:#b3261e; --bad-bg:#fbe6e4; --none:#5b6873; --none-bg:#e8ecef;
+  --f-body:"IBM Plex Sans Thai",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --panel:#17212a; --ink:#e6ecf0; --muted:#94a3ae; --line:#2a3743;
+  --steel:#9cc3dc; --accent:#f0a81c; --accent-ink:#1b1300;
+  --ok:#6fd39b; --ok-bg:#153223; --warn:#f2c060; --warn-bg:#3a2b0c; --bad:#ff8a80; --bad-bg:#3d1714; --none:#94a3ae; --none-bg:#22303b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --panel:#17212a; --ink:#e6ecf0; --muted:#94a3ae; --line:#2a3743;
+  --steel:#9cc3dc; --accent:#f0a81c; --accent-ink:#1b1300;
+  --ok:#6fd39b; --ok-bg:#153223; --warn:#f2c060; --warn-bg:#3a2b0c; --bad:#ff8a80; --bad-bg:#3d1714; --none:#94a3ae; --none-bg:#22303b; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand h1{font-size:1.35rem;font-weight:700;color:var(--steel);letter-spacing:.01em}
+.brand small{color:var(--muted);font-size:.85rem}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+nav.tabs button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 14px;font-weight:500}
+nav.tabs button[aria-selected="true"]{background:var(--steel);color:var(--bg);border-color:var(--steel)}
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-block:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;text-align:left}
+.stat b{font-size:1.5rem;font-family:var(--f-mono);font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{color:var(--muted);font-size:.8rem}
+.stat.bad b{color:var(--bad)} .stat.ok b{color:var(--ok)} .stat.warn b{color:var(--warn)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filters input,.filters select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.filters input{flex:1 1 200px}
+.list{display:flex;flex-direction:column;gap:6px}
+.row{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.tag{font-family:var(--f-mono);font-weight:600;font-size:1.05rem;color:var(--steel);border:2px solid var(--steel);border-radius:6px;text-align:center;padding:4px 2px;line-height:1.2}
+.row .meta{min-width:0}
+.row .meta h3{font-size:.98rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .meta p{margin:0;color:var(--muted);font-size:.82rem}
+.ghead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 2px 2px;border-bottom:2px solid var(--steel)}
+.ghead h2{font-size:1rem;color:var(--steel)}
+.ghead span{font-size:.82rem}
+.lateN{color:var(--bad)}
+.row .act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.none{background:var(--none-bg);color:var(--none)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;font-weight:500}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.dark{background:var(--steel);color:var(--bg);border-color:var(--steel)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;display:flex;flex-direction:column;gap:14px}
+.sheet-head{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.sheet-head .tag{font-size:1.4rem;min-width:84px;padding:6px}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;font-size:.88rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;overflow-wrap:anywhere}
+fieldset{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0;min-width:0}
+legend{font-weight:600;color:var(--steel);padding:0 6px}
+.chk{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding-block:8px;border-bottom:1px dashed var(--line)}
+.chk:last-child{border-bottom:0}
+.chk .q{font-size:.92rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;inset:0}
+.seg span{display:block;padding:5px 10px;font-size:.82rem;font-weight:600;min-width:44px;text-align:center}
+.seg input:checked + span.o{background:var(--ok);color:var(--panel)}
+.seg input:checked + span.n{background:var(--bad);color:var(--panel)}
+.seg input:checked + span.a{background:var(--muted);color:var(--panel)}
+.seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:-2px}
+.chk .note{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);min-width:0}
+.field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink);width:100%}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.hist{display:flex;flex-direction:column;gap:6px}
+.hist .h{display:grid;grid-template-columns:100px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.88rem}
+.hist .h p{margin:0;color:var(--muted);overflow-wrap:anywhere}
+.notice{border-radius:8px;padding:10px 12px;font-size:.88rem;background:var(--none-bg);color:var(--ink)}
+.notice.bad{background:var(--bad-bg);color:var(--bad)}
+.notice.ok{background:var(--ok-bg);color:var(--ok)}
+.empty{color:var(--muted);text-align:center;padding:24px 8px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+td.wrap{white-space:normal;min-width:180px}
+th{color:var(--muted);font-weight:600;background:var(--bg)}
+.qrtools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.qrgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:12px}
+.label{background:#fff;color:#111;border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;position:relative}
+.label.off{opacity:.35}
+.label input{position:absolute;top:8px;left:8px;width:18px;height:18px}
+.label .lt{font-family:var(--f-mono);font-weight:600;font-size:1.3rem;color:#1f3a4d}
+.label .ln{font-size:.78rem;line-height:1.3}
+.label .li{font-family:var(--f-mono);font-size:.68rem;color:#444}
+.label svg{width:120px;height:120px}
+.muted{color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--steel);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;font-weight:500;max-width:calc(100% - 32px)}
+@media (max-width:640px){
+  .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .row{grid-template-columns:60px minmax(0,1fr)}
+  .row .act{grid-column:1/-1;justify-content:flex-start}
+  .hist .h{grid-template-columns:minmax(0,1fr) auto}
+  .hist .h .d{grid-column:1/-1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* banner for load problems */
+.banner{margin-top:14px;border-radius:10px;padding:12px 14px;font-size:.92rem;line-height:1.55}
+.banner.bad{background:var(--bad-bg);color:var(--bad)} .banner.info{background:var(--none-bg);color:var(--ink)}
+.banner b{display:block;font-size:1rem;margin-bottom:2px}
+.brand-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* PM inspection sheet */
+.doc{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.doc-head{background:var(--steel);color:var(--bg);padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.doc-head h2{font-size:1.05rem;font-weight:700} .doc-head p{margin:2px 0 0;font-size:.82rem;opacity:.85}
+.doc-head .no{font-family:var(--f-mono);font-size:.82rem;text-align:right;opacity:.9}
+.doc-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-bottom:1px solid var(--line)}
+.doc-info div{padding:8px 14px;border-right:1px solid var(--line);border-top:1px solid var(--line);min-width:0}
+.doc-info small{display:block;color:var(--muted);font-size:.74rem}
+.doc-info strong{font-weight:600;overflow-wrap:anywhere}
+.sec{padding:14px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.sec:first-of-type{border-top:0}
+.sec-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sec-h h3{font-size:1rem;flex:1;min-width:0}
+.sec-n{width:26px;height:26px;border-radius:50%;background:var(--steel);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:.85rem;flex:none}
+.grp{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:6px 10px;background:var(--bg);border-radius:8px;font-weight:600;color:var(--steel);font-size:.9rem}
+.grp .btn{padding:4px 10px;font-size:.8rem}
+.item{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:6px 10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .no{font-family:var(--f-mono);color:var(--muted);font-size:.85rem}
+.item .q{font-size:.93rem}
+.item.is-ng{background:var(--bad-bg);border-radius:8px}
+.item .note{grid-column:2/-1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.seg span{padding:8px 12px;min-width:56px}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.res label{position:relative;border:2px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:600}
+.res input{position:absolute;opacity:0}
+.res label:has(input:checked){border-color:var(--steel);background:var(--bg)}
+.res label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.res .r0{color:var(--ok)} .res .r1{color:var(--warn)} .res .r2{color:var(--bad)}
+.sigs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.sig{display:flex;flex-direction:column;gap:6px}
+.sig canvas{width:100%;height:130px;border:1px dashed var(--muted);border-radius:8px;background:#fff;touch-action:none;cursor:crosshair}
+.sig .row2{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.82rem;color:var(--muted)}
+.formbar{position:sticky;bottom:0;z-index:4;background:var(--panel);border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.prog{flex:1 1 180px;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted)}
+.prog i{display:block;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.prog i b{display:block;height:100%;background:var(--ok);width:0;transition:width .2s}
+@media (max-width:640px){
+  .item{grid-template-columns:32px minmax(0,1fr)}
+  .item .seg{grid-column:2/-1;justify-self:start}
+  .item .note{grid-column:1/-1}
+}
+/* scanner */
+.overlay{position:fixed;inset:0;z-index:30;background:rgba(10,16,22,.72);display:grid;place-items:center;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.scanbox{background:var(--panel);color:var(--ink);border-radius:14px;width:min(440px,100%);padding:16px;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto}
+.scanbox video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:#000;max-width:100%}
+.scanrow{display:flex;gap:8px;flex-wrap:wrap}
+.scanrow input{flex:1 1 140px;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+#printarea{display:none}
+@media print{
+  @page{size:A4;margin:8mm}
+  html,body{background:#fff!important;padding:0!important;margin:0!important}
+  body::before,.wrap,.toast{display:none!important}
+  #printarea{display:block}
+}
+</style>
+</head><body>
+
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <h1>PM ลิฟต์ · อาคารภูมิสิริมังคลานุสรณ์</h1>
+    <div class="brand-r"><small id="conn">กำลังโหลดข้อมูล…</small><button class="btn primary" id="scanbtn">สแกน QR</button></div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="units" aria-selected="true">ลิฟต์ทั้งหมด</button>
+    <button role="tab" data-tab="history" aria-selected="false">ประวัติ PM</button>
+    <button role="tab" data-tab="qr" aria-selected="false">พิมพ์ QR Code</button>
+  </nav>
+</header>
+
+<main>
+  <div id="banner"></div>
+  <section id="v-units">
+    <div class="strip" id="strip"></div>
+    <div class="filters">
+      <input id="q" type="search" placeholder="ค้นหา เช่น L16, รหัสครุภัณฑ์, ลิฟต์พยาบาล">
+      <select id="fb" aria-label="กลุ่มลิฟต์"><option value="">ทุกกลุ่มลิฟต์</option></select>
+      <select id="fs"><option value="">ทุกสถานะ</option><option value="bad">เกินกำหนด</option><option value="warn">ใกล้ครบกำหนด</option><option value="ok">ทำแล้ว</option><option value="none">ยังไม่เคยทำ</option></select>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section id="v-unit" hidden></section>
+
+  <section id="v-history" hidden>
+    <div class="filters" style="margin-top:14px">
+      <input id="hq" type="search" placeholder="ค้นหาลิฟต์ / ช่าง">
+      <input id="hm" type="month">
+      <button class="btn dark" id="csv">ดาวน์โหลด CSV</button>
+    </div>
+    <div id="htable"></div>
+  </section>
+
+  <section id="v-qr" hidden>
+    <div class="sheet">
+      <div>
+        <h2 style="font-size:1.1rem">ป้าย QR Code สำหรับติดหน้าลิฟต์</h2>
+        <p class="muted" style="margin:4px 0 0">สแกนด้วยกล้องมือถือแล้วจะเปิดฟอร์ม PM ของลิฟต์ตัวนั้นทันที เลือกป้ายแล้วกด "พิมพ์ QR Code" หน้าต่างพิมพ์จะขึ้นทันที ตั้งกระดาษ A4 สเกล 100%</p>
+      </div>
+      <div class="qrtools">
+        <select id="qb" aria-label="กลุ่มลิฟต์"><option value="">ทุกกลุ่มลิฟต์</option></select>
+        <select id="qk"><option value="">ลิฟต์และบันไดเลื่อน</option><option value="L">เฉพาะลิฟต์</option><option value="E">เฉพาะบันไดเลื่อน</option></select>
+        <select id="qs"><option value="8">ป้ายใหญ่ 8 ดวง/หน้า A4</option><option value="15">ป้ายกลาง 15 ดวง/หน้า A4</option><option value="24">ป้ายเล็ก 24 ดวง/หน้า A4</option><option value="40">ป้ายจิ๋ว 40 ดวง/หน้า A4</option></select>
+        <button class="btn" id="qall">เลือกทั้งหมด</button>
+        <button class="btn" id="qnone">ไม่เลือก</button>
+        <button class="btn primary" id="qprint">พิมพ์ QR Code</button>
+        <button class="btn" id="qtab">เปิดหน้าพิมพ์ในแท็บใหม่</button>
+        <span class="muted" id="qcount"></span>
+      </div>
+      <div class="qrgrid" id="qgrid"></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+let APP_URL = "", UNITS = [], BY_ID = {}, START_ID = null;
+const CYCLE = 30, SOON = 7;
+
+const LIFT_CHECKS = [
+  ["ห้องเครื่อง", [
+    ["m1","สภาพห้องเครื่อง ความสะอาด อุณหภูมิ การระบายอากาศ"],
+    ["m2","มอเตอร์/เครื่องขับ: เสียง ความร้อน การสั่นสะเทือน"],
+    ["m3","ระบบเบรก: ระยะผ้าเบรก การจับ-ปล่อย"],
+    ["m4","ลวดสลิง: การสึกหรอ เส้นลวดขาด ความตึงสม่ำเสมอ"],
+    ["m5","Governor และสวิตช์ความปลอดภัย"],
+    ["m6","ตู้ควบคุม / Inverter: ขั้วต่อ พัดลมระบายความร้อน รหัส Error"]]],
+  ["ตัวลิฟต์ (Car)", [
+    ["c1","ประตูตู้และประตูชั้น เปิด-ปิดนุ่มนวล ไม่กระแทก"],
+    ["c2","Safety edge / Light curtain ทำงานถูกต้อง"],
+    ["c3","ปุ่มกด จอแสดงชั้น ไฟส่องสว่าง พัดลมในตู้"],
+    ["c4","อินเตอร์คอม / กริ่งฉุกเฉิน ติดต่อห้องควบคุมได้"],
+    ["c5","ไฟฉุกเฉินในตู้ / ระบบ ARD"],
+    ["c6","การจอดตรงระดับชั้น (Leveling)"]]],
+  ["ช่องลิฟต์และบ่อลิฟต์", [
+    ["h1","รางนำ (Guide rail) และการหล่อลื่น"],
+    ["h2","บ่อลิฟต์: ความสะอาด น้ำรั่วซึม บัฟเฟอร์"],
+    ["h3","Limit switch / Final limit switch"],
+    ["h4","ปุ่มเรียกและไฟบอกทิศทางหน้าชั้น"],
+    ["h5","ระบบ Fireman / การทำงานกรณีเพลิงไหม้"]]]
+];
+const ESC_CHECKS = [
+  ["ขั้นบันไดและราวจับ", [
+    ["e1","ขั้นบันไดและ Comb plate: ฟันหวีไม่หัก ไม่มีเศษติด"],
+    ["e2","ราวมือจับ: ความเร็วสัมพันธ์กับขั้น ไม่ฉีกขาด"],
+    ["e3","Skirt panel / Skirt brush"],
+    ["e8","ไฟส่องสว่าง ป้ายเตือนความปลอดภัย"]]],
+  ["ระบบความปลอดภัย", [
+    ["e4","ปุ่มหยุดฉุกเฉิน (บน/ล่าง)"],
+    ["e5","สวิตช์ความปลอดภัย (Comb, Handrail inlet, Step sag)"]]],
+  ["ระบบขับเคลื่อน", [
+    ["e6","โซ่ขับและการหล่อลื่น"],
+    ["e7","มอเตอร์ เกียร์ เบรก: เสียง ความร้อน"],
+    ["e9","ตู้ควบคุม / รหัส Error"]]]
+];
+const PM_TYPES = ["รายเดือน","ราย 3 เดือน","ราย 6 เดือน","รายปี","ซ่อมแก้ไข (CM)"];
+const RESULTS = ["ใช้งานได้ปกติ","ใช้งานได้ มีข้อสังเกต","หยุดใช้งาน รอซ่อม"];
+
+let records = [], canWrite = true, dbReady = false;
+let tab = "units", openUnit = null, formUnit = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = { get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{localStorage.setItem(k,v)}catch{}} };
+
+const TH_M = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+function thDate(iso){ if(!iso) return "-"; const [y,m,d] = iso.split("-").map(Number); return `${d} ${TH_M[m-1]} ${y+543}`; }
+function todayISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function addDays(iso,n){ const d=new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+
+function lastOf(id){ let best=null; for(const r of records) if(r.assetId===id && r.type!=="ซ่อมแก้ไข (CM)" && (!best || r.date>best.date)) best=r; return best; }
+function statusOf(id){
+  const l = lastOf(id);
+  if(!l) return {k:"none", t:"ยังไม่เคยทำ PM", last:null, due:null};
+  const due = addDays(l.date, CYCLE), left = daysBetween(todayISO(), due);
+  if(left < 0) return {k:"bad", t:`เกินกำหนด ${-left} วัน`, last:l, due};
+  if(left <= SOON) return {k:"warn", t:`ครบกำหนดใน ${left} วัน`, last:l, due};
+  return {k:"ok", t:"PM แล้ว", last:l, due};
+}
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
+
+/* ---------- units list ---------- */
+function renderStrip(){
+  const c={bad:0,warn:0,ok:0,none:0}; UNITS.forEach(u=>c[statusOf(u.id).k]++);
+  const ym=todayISO().slice(0,7), doneMonth=new Set(records.filter(r=>r.date.startsWith(ym)).map(r=>r.assetId)).size;
+  $("#strip").innerHTML = `
+    <button class="stat" data-f=""><b>${UNITS.length}</b><span>ลิฟต์ + บันไดเลื่อน</span></button>
+    <button class="stat ok" data-f="ok"><b>${doneMonth}</b><span>PM แล้วเดือนนี้</span></button>
+    <button class="stat warn" data-f="warn"><b>${c.warn}</b><span>ใกล้ครบกำหนด (≤${SOON} วัน)</span></button>
+    <button class="stat bad" data-f="${dbReady && records.length? "bad":"none"}"><b>${c.bad + c.none}</b><span>เกินกำหนด / ยังไม่เคยทำ</span></button>`;
+  $("#strip").querySelectorAll("button").forEach(b=>b.onclick=()=>{ $("#fs").value=b.dataset.f; renderList(); });
+}
+function renderList(){
+  const q=$("#q").value.trim().toLowerCase(), fb=$("#fb").value, fs=$("#fs").value;
+  const rows = UNITS.filter(u=>{
+    if(fb && u.group!==fb) return false;
+    if(q && !(u.tag+" "+u.name+" "+u.id+" "+u.type+" "+u.group).toLowerCase().includes(q)) return false;
+    if(fs && statusOf(u.id).k!==fs) return false;
+    return true;
+  });
+  let html = "", cur = null;
+  for(const u of rows){
+    if(u.group!==cur){
+      cur=u.group;
+      const inG=rows.filter(x=>x.group===cur), late=inG.filter(x=>["bad","none"].includes(statusOf(x.id).k)).length;
+      html += `<div class="ghead"><h2>${esc(cur)}</h2><span class="muted">${inG.length} ตัว${late? ` · <b class="lateN">ต้องทำ PM ${late}</b>`:""}</span></div>`;
+    }
+    html += unitRow(u);
+  }
+  $("#list").innerHTML = rows.length ? html : `<div class="empty">${dbReady? "ไม่พบลิฟต์ที่ตรงกับเงื่อนไข" : "กำลังโหลดรายชื่อลิฟต์จาก Google Sheet…"}</div>`;
+}
+function unitRow(u){
+    const s=statusOf(u.id);
+    return `<div class="row">
+      <div class="tag">${esc(u.tag)}</div>
+      <div class="meta"><h3>${esc(u.name)}</h3>
+        <p>${esc(u.group)} · อาคาร${esc(u.bld)} · <span class="mono">${esc(u.id)}</span></p>
+        <p>PM ล่าสุด ${s.last? thDate(s.last.date):"-"}${s.due? " · ครบกำหนดถัดไป "+thDate(s.due):""}</p></div>
+      <div class="act"><span class="chip ${s.k}">${s.t}</span>
+        <button class="btn" data-open="${u.id}">ประวัติ</button>
+        <button class="btn primary" data-pm="${u.id}">บันทึก PM</button></div></div>`;
+}
+document.addEventListener("click", e=>{
+  const o=e.target.closest("[data-open]"); if(o){ e.preventDefault(); showUnit(o.dataset.open, false); return; }
+  const p=e.target.closest("[data-pm]"); if(p){ showUnit(p.dataset.pm, true); return; }
+  const rp=e.target.closest("[data-report]"); if(rp){ printReport(rp.dataset.report); return; }
+});
+
+/* ---------- unit detail + PM form ---------- */
+function showUnit(id, withForm){
+  const u=BY_ID[id]; if(!u) return;
+  openUnit=id; formUnit = withForm? id : null;
+  setTab("unit"); renderUnit(); window.scrollTo({top:0});
+}
+function renderUnit(){
+  const u=BY_ID[openUnit], s=statusOf(u.id);
+  const hist = records.filter(r=>r.assetId===u.id).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||"").localeCompare(a.createdAt||""));
+  const v=$("#v-unit");
+  v.innerHTML = `<div class="sheet">
+    <div class="sheet-head">
+      <div style="display:flex;gap:14px;align-items:center;min-width:0">
+        <div class="tag">${esc(u.tag)}</div>
+        <div style="min-width:0"><h2 style="font-size:1.15rem">${esc(u.name)}</h2><span class="chip ${s.k}">${s.t}</span></div>
+      </div>
+      <button class="btn" id="back">← กลับรายการ</button>
+    </div>
+    <dl class="kv" ${formUnit?"hidden":""}>
+      <dt>รหัสครุภัณฑ์</dt><dd class="mono">${esc(u.id)}</dd>
+      <dt>ประเภท</dt><dd>${esc(u.type)}</dd>
+      <dt>กลุ่มลิฟต์</dt><dd>${esc(u.group)}</dd>
+      <dt>อาคาร</dt><dd>อาคารภูมิสิริมังคลานุสรณ์ (${esc(u.bld)})</dd>
+      <dt>PM ล่าสุด</dt><dd>${s.last? thDate(s.last.date)+" โดย "+esc(s.last.tech):"-"}</dd>
+      <dt>ครบกำหนดถัดไป</dt><dd>${s.due? thDate(s.due):"ทำ PM ครั้งแรกได้เลย"}</dd>
+    </dl>
+    <div id="formslot"></div>
+    ${formUnit? "" : `<div><button class="btn primary" id="startpm">บันทึก PM ลิฟต์ตัวนี้</button></div>`}
+    <div><h3 style="font-size:1rem;margin-bottom:8px">ประวัติ PM (${hist.length})</h3>
+      <div class="hist">${hist.length? hist.map(r=>histRow(r)).join("") : `<div class="empty">ยังไม่มีประวัติ PM ของลิฟต์ตัวนี้</div>`}</div></div>
+  </div>`;
+  $("#back").onclick=()=>{ formUnit=null; setTab("units"); };
+  const sp=$("#startpm"); if(sp) sp.onclick=()=>{ formUnit=openUnit; renderUnit(); };
+  if(formUnit) renderForm();
+}
+function histRow(r){
+  const ng=Object.entries(r.checks||{}).filter(([,v])=>v==="ng").length;
+  const cls = r.result===RESULTS[2]?"bad": (ng||r.result===RESULTS[1])?"warn":"ok";
+  return `<div class="h"><span class="mono">${thDate(r.date)}</span>
+    <div style="min-width:0"><b>${esc(r.type)}</b> · ${esc(r.tech)}${r.company?" ("+esc(r.company)+")":""}
+      <p>${ng? `ไม่ผ่าน ${ng} รายการ: `+esc(ngText(r)) : "ผ่านทุกรายการ"}${r.remark? " · "+esc(r.remark):""}</p></div>
+    <span class="d" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="chip ${cls}">${esc(r.result||"")}</span>
+      <button class="btn" data-report="${r.row}">ใบรายงาน</button></span></div>`;
+}
+function checksFor(u){ return u.kind==="E"? ESC_CHECKS : LIFT_CHECKS; }
+function labelOf(key){ for(const g of [...LIFT_CHECKS,...ESC_CHECKS]) for(const [k,t] of g[1]) if(k===key) return t; return key; }
+function ngText(r){ return Object.entries(r.checks||{}).filter(([,v])=>v==="ng").map(([k])=>labelOf(k).split(":")[0]+(r.ngNotes?.[k]?` (${r.ngNotes[k]})`:"")).join(", "); }
+
+const MEASURES = {
+  L: [["lev","ระยะจอดคลาดเคลื่อนสูงสุด","มม."],["temp","อุณหภูมิห้องเครื่อง","°C"],["trips","เลขมิเตอร์นับเที่ยววิ่ง","ครั้ง"]],
+  E: [["temp","อุณหภูมิตู้ควบคุม","°C"],["hours","ชั่วโมงทำงานสะสม","ชม."]]
+};
+const nowHM = () => new Date().toTimeString().slice(0,5);
+
+function renderForm(){
+  const u=BY_ID[formUnit], s=statusOf(u.id);
+  const groups = checksFor(u), total = groups.reduce((n,g)=>n+g[1].length,0);
+  const slot=$("#formslot");
+  const form=document.createElement("form"); form.id="pmform"; form.className="doc"; form.noValidate=true;
+  let n=0;
+  form.innerHTML = `
+    <div class="doc-head">
+      <div><h2>แบบบันทึกการบำรุงรักษาเชิงป้องกัน (PM) ${u.kind==="E"?"บันไดเลื่อน":"ลิฟต์"}</h2>
+        <p>อาคารภูมิสิริมังคลานุสรณ์ · ${esc(u.group)}</p></div>
+      <div class="no">เลขที่เอกสาร<br>ออกให้อัตโนมัติเมื่อบันทึก</div>
+    </div>
+    <div class="doc-info">
+      <div><small>เลขลิฟต์</small><strong class="mono">${esc(u.tag)}</strong></div>
+      <div><small>ชื่อ / ประเภท</small><strong>${esc(u.name)}</strong></div>
+      <div><small>รหัสครุภัณฑ์</small><strong class="mono">${esc(u.id)}</strong></div>
+      <div><small>อาคาร</small><strong>${esc(u.bld)}</strong></div>
+      <div><small>PM ครั้งล่าสุด</small><strong>${s.last? thDate(s.last.date):"ยังไม่เคยทำ"}</strong></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><span class="sec-n">1</span><h3>ข้อมูลการปฏิบัติงาน</h3></div>
+      <div class="grid2">
+        <label class="field">วันที่ทำ PM<input type="date" id="f-date" required value="${todayISO()}"></label>
+        <label class="field">ประเภทงาน<select id="f-type">${PM_TYPES.map(t=>`<option>${t}</option>`).join("")}</select></label>
+        <label class="field">เวลาเริ่ม<input type="time" id="f-start" value="${nowHM()}"></label>
+        <label class="field">เวลาเสร็จ<input type="time" id="f-end"></label>
+        <label class="field">ชื่อช่างผู้ตรวจ *<input id="f-tech" required autocomplete="name" placeholder="ชื่อ-นามสกุล" value="${esc(store.get("pm.tech")||"")}"></label>
+        <label class="field">บริษัทผู้รับจ้าง<input id="f-co" placeholder="ถ้ามี" value="${esc(store.get("pm.co")||"")}"></label>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><span class="sec-n">2</span><h3>รายการตรวจสอบ (${total} ข้อ)</h3><button type="button" class="btn" id="allok">ผ่านทุกข้อ</button></div>
+      ${groups.map(([g,items],gi)=>`<div class="grp"><span>${gi+1}. ${g}</span><button type="button" class="btn" data-grpok="${gi}">ผ่านทั้งหมวด</button></div>
+        <div data-grp="${gi}">${items.map(([k,t],ii)=>{ n++; return `
+        <div class="item" data-k="${k}"><span class="no">${gi+1}.${ii+1}</span><span class="q">${t}</span>
+          <span class="seg" role="radiogroup" aria-label="${esc(t)}">
+            <label><input type="radio" name="c-${k}" value="ok" id="c-${k}-ok"><span class="o">ผ่าน</span></label>
+            <label><input type="radio" name="c-${k}" value="ng" id="c-${k}-ng"><span class="n">ไม่ผ่าน</span></label>
+            <label><input type="radio" name="c-${k}" value="na" id="c-${k}-na"><span class="a">N/A</span></label>
+          </span>
+          <input class="note" id="n-${k}" placeholder="รายละเอียดปัญหา / การแก้ไข" hidden>
+        </div>`; }).join("")}</div>`).join("")}
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><span class="sec-n">3</span><h3>ค่าที่ตรวจวัด</h3></div>
+      <div class="grid2">${MEASURES[u.kind==="E"?"E":"L"].map(([k,t,unit])=>`
+        <label class="field">${t} (${unit})<input id="m-${k}" type="number" step="any" inputmode="decimal"></label>`).join("")}</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><span class="sec-n">4</span><h3>สรุปผลการตรวจ</h3></div>
+      <div class="res" role="radiogroup" aria-label="สถานะหลังตรวจ">${RESULTS.map((t,i)=>`
+        <label><input type="radio" name="f-res" value="${t}" id="r-${i}" ${i===0?"checked":""}><span class="r${i}">${t}</span></label>`).join("")}</div>
+      <label class="field">อะไหล่ / วัสดุที่เปลี่ยน<input id="f-parts" placeholder="เช่น หลอดไฟในตู้ 2 หลอด"></label>
+      <label class="field">หมายเหตุ / ข้อเสนอแนะ<textarea id="f-rem" rows="3"></textarea></label>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><span class="sec-n">5</span><h3>ลงนาม</h3></div>
+      <div class="sigs">
+        <div class="sig"><span class="muted">ลายเซ็นช่างผู้ตรวจ</span><canvas id="sig-tech" aria-label="ช่องเซ็นชื่อช่าง"></canvas>
+          <div class="row2"><span id="sig-tech-name">${esc(store.get("pm.tech")||"(ชื่อช่าง)")}</span><button type="button" class="btn" data-clear="sig-tech">ล้าง</button></div></div>
+        <div class="sig"><span class="muted">ลายเซ็นผู้ตรวจรับงาน</span><canvas id="sig-acc" aria-label="ช่องเซ็นชื่อผู้ตรวจรับ"></canvas>
+          <div class="row2"><input id="f-acc" placeholder="ชื่อผู้ตรวจรับงาน" style="flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"><button type="button" class="btn" data-clear="sig-acc">ล้าง</button></div></div>
+      </div>
+    </div>
+
+    <div id="f-msg" style="padding:0 16px"></div>
+    <div class="formbar">
+      <div class="prog"><span id="f-prog">ตรวจแล้ว 0/${total} ข้อ</span><i><b id="f-bar"></b></i></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" type="button" id="f-cancel">ยกเลิก</button>
+        <button class="btn primary" type="submit" id="f-save">บันทึกผล PM</button>
+      </div>
+    </div>`;
+  slot.replaceWith(form);
+  const pads = { "sig-tech": sigPad(form.querySelector("#sig-tech")), "sig-acc": sigPad(form.querySelector("#sig-acc")) };
+  form._pads = pads;
+  const update = ()=>{
+    const done=form.querySelectorAll('.seg input:checked').length, ng=form.querySelectorAll('.seg input[value="ng"]:checked').length;
+    form.querySelector("#f-prog").textContent = `ตรวจแล้ว ${done}/${total} ข้อ${ng? ` · ไม่ผ่าน ${ng} ข้อ`:""}`;
+    form.querySelector("#f-bar").style.width = (done/total*100)+"%";
+    form.querySelector("#f-bar").style.background = ng? "var(--bad)" : "var(--ok)";
+    if(ng && form.querySelector("#r-0").checked) form.querySelector("#r-1").checked = true;
+  };
+  form.addEventListener("change", e=>{
+    if(e.target.name?.startsWith("c-")){
+      const k=e.target.name.slice(2), isNg=e.target.value==="ng";
+      form.querySelector("#n-"+k).hidden = !isNg; e.target.closest(".item").classList.toggle("is-ng", isNg);
+      if(isNg) form.querySelector("#n-"+k).focus();
+      update();
+    }
+  });
+  form.querySelector("#f-tech").addEventListener("input", e=>{ form.querySelector("#sig-tech-name").textContent = e.target.value || "(ชื่อช่าง)"; });
+  const setOk = scope => { scope.querySelectorAll('input[value="ok"]').forEach(i=>{ if(!scope.querySelector(`input[name="${i.name}"]:checked`)) i.checked=true; }); update(); };
+  form.querySelector("#allok").onclick=()=>setOk(form);
+  form.querySelectorAll("[data-grpok]").forEach(b=>b.onclick=()=>setOk(form.querySelector(`[data-grp="${b.dataset.grpok}"]`)));
+  form.querySelectorAll("[data-clear]").forEach(b=>b.onclick=()=>pads[b.dataset.clear].clear());
+  form.querySelector("#f-cancel").onclick=()=>{ formUnit=null; renderUnit(); };
+  form.addEventListener("submit", e=>{ e.preventDefault(); savePM(form, u); });
+}
+
+// finger/mouse signature pad; exports a small PNG so it fits in one sheet cell
+function sigPad(canvas){
+  const ctx=canvas.getContext("2d"); let drawing=false, empty=true, last=null;
+  const fit=()=>{ const r=canvas.getBoundingClientRect(), d=window.devicePixelRatio||1; canvas.width=Math.max(1,r.width*d); canvas.height=Math.max(1,r.height*d);
+    ctx.setTransform(d,0,0,d,0,0); ctx.lineWidth=2.2; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle="#111"; empty=true; };
+  requestAnimationFrame(fit);
+  const pos=e=>{ const r=canvas.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; };
+  canvas.addEventListener("pointerdown", e=>{ drawing=true; last=pos(e); canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
+  canvas.addEventListener("pointermove", e=>{ if(!drawing) return; const p=pos(e); ctx.beginPath(); ctx.moveTo(...last); ctx.lineTo(...p); ctx.stroke(); last=p; empty=false; });
+  const stop=()=>{ drawing=false; };
+  canvas.addEventListener("pointerup", stop); canvas.addEventListener("pointercancel", stop);
+  return {
+    isEmpty:()=>empty,
+    clear:()=>{ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.restore(); empty=true; },
+    toData:()=>{ if(empty) return ""; const o=document.createElement("canvas"); o.width=360; o.height=120;
+      const c=o.getContext("2d"); c.drawImage(canvas,0,0,o.width,o.height); return o.toDataURL("image/png"); }
+  };
+}
+
+function savePM(form, u){
+  const msg=form.querySelector("#f-msg"), v=id=>form.querySelector(id)?.value?.trim() ?? "";
+  const checks={}, ngNotes={}, missing=[];
+  for(const [,items] of checksFor(u)) for(const [k,t] of items){
+    const val=form.querySelector(`input[name="c-${k}"]:checked`)?.value;
+    if(!val) missing.push(form.querySelector(`.item[data-k="${k}"] .no`).textContent); else checks[k]=val;
+    if(val==="ng"){ const n=form.querySelector("#n-"+k).value.trim(); if(n) ngNotes[k]=n; }
+  }
+  const fail = (text, el)=>{ msg.innerHTML=`<div class="notice bad" style="margin-top:12px">${text}</div>`; (el||msg).scrollIntoView({behavior:"smooth",block:"center"}); };
+  if(missing.length) return fail(`ยังไม่ได้เลือกผลตรวจ ${missing.length} ข้อ (ข้อ ${esc(missing.slice(0,6).join(", "))}${missing.length>6?" …":""})`, form.querySelector(`.item[data-k] .seg`));
+  const tech=v("#f-tech");
+  if(!tech) return fail("กรุณาใส่ชื่อช่างผู้ตรวจ (หัวข้อ 1)", form.querySelector("#f-tech"));
+  const measures={}; for(const [k] of MEASURES[u.kind==="E"?"E":"L"]){ const x=v("#m-"+k); if(x!=="") measures[k]=Number(x); }
+  const rec = {
+    assetId:u.id, tag:u.tag, date:v("#f-date"), type:v("#f-type"), start:v("#f-start"), end:v("#f-end") || nowHM(),
+    tech, company:v("#f-co"), checks, ngNotes, measures, leveling: measures.lev ?? null,
+    result: form.querySelector('input[name="f-res"]:checked').value, parts:v("#f-parts"), remark:v("#f-rem"),
+    acceptor:v("#f-acc"), sigTech: form._pads["sig-tech"].toData(), sigAcc: form._pads["sig-acc"].toData()
+  };
+  rec.ngText = ngText(rec);
+  store.set("pm.tech", tech); store.set("pm.co", rec.company);
+  const btn=form.querySelector("#f-save"); btn.disabled=true; btn.textContent="กำลังบันทึก…";
+  google.script.run
+    .withSuccessHandler(data=>{ applyData(data); formUnit=null; renderUnit(); toast(`บันทึก PM ${u.tag} แล้ว`); })
+    .withFailureHandler(err=>{
+      btn.disabled=false; btn.textContent="บันทึกผล PM";
+      fail(`ยังไม่ได้บันทึก: ${esc(err?.message||"เชื่อมต่อไม่สำเร็จ")} ลองกดบันทึกอีกครั้ง`);
+    })
+    .savePM(rec);
+}
+
+/* ---------- printable PM report ---------- */
+function printReport(row){
+  toast("กำลังเตรียมใบรายงาน…");
+  google.script.run.withSuccessHandler(r=>{
+    $("#printarea").innerHTML = reportHTML(r);
+    setTimeout(()=>window.print(), 300);
+  }).withFailureHandler(err=>toast("เปิดใบรายงานไม่ได้: "+(err?.message||""))).getReport(row);
+}
+function reportHTML(r){
+  const u=BY_ID[r.assetId]||{tag:r.tag,name:"",bld:"",group:"",type:"",kind:"L"};
+  const groups=checksFor(u), mk=(v,w)=>v===w?"✓":"";
+  const meas=MEASURES[u.kind==="E"?"E":"L"].filter(([k])=>r.measures?.[k]!=null);
+  const sig=(src,name,role)=>`<div class="rs"><div class="ri">${src?`<img src="${src}" alt="">`:""}</div><div class="rl"></div>
+    <div>(${esc(name||"..............................")})</div><div>${role}</div><div>วันที่ ${thDate(r.date)}</div></div>`;
+  return `<style>
+  #printarea .rp{font-family:"IBM Plex Sans Thai",Tahoma,sans-serif;color:#111;font-size:8.8pt;line-height:1.3}
+  #printarea .rh{display:flex;justify-content:space-between;align-items:flex-start;gap:4mm;border-bottom:2px solid #1f3a4d;padding-bottom:2mm;margin-bottom:2.5mm}
+  #printarea .rh h1{font-size:12pt;margin:0;color:#1f3a4d} #printarea .rh p{margin:0.5mm 0 0}
+  #printarea .rbox{border:1px solid #1f3a4d;padding:1.5mm 3mm;font-size:8.5pt;text-align:right;min-width:50mm}
+  #printarea table{width:100%;border-collapse:collapse;margin-bottom:2.5mm}
+  #printarea th,#printarea td{border:1px solid #888;padding:0.7mm 1.8mm;text-align:left;vertical-align:top;white-space:normal}
+  #printarea th{background:#e8eef2;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:600}
+  #printarea td.c,#printarea th.c{text-align:center;width:13mm;font-weight:700;white-space:nowrap}
+  #printarea tr.g td{background:#f3f5f7;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printarea .rsigs{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:3mm;text-align:center}
+  #printarea .ri{height:15mm;display:flex;align-items:flex-end;justify-content:center} #printarea .ri img{max-height:15mm;max-width:55mm}
+  #printarea .rl{border-bottom:1px dotted #333;margin:0 10mm 1mm}
+  </style>
+  <div class="rp">
+    <div class="rh"><div><h1>แบบบันทึกการบำรุงรักษาเชิงป้องกัน (Preventive Maintenance) ${u.kind==="E"?"บันไดเลื่อน":"ลิฟต์"}</h1>
+      <p>อาคารภูมิสิริมังคลานุสรณ์ · ${esc(u.group||"")}</p></div>
+      <div class="rbox">เลขที่เอกสาร <b>${esc(r.docNo||("PM-"+r.row))}</b><br>วันที่ ${thDate(r.date)}<br>เวลา ${esc(r.start||"-")} – ${esc(r.end||"-")} น.</div></div>
+    <table><tr><th>เลขลิฟต์</th><td>${esc(u.tag)}</td><th>ชื่อ</th><td>${esc(u.name)}</td></tr>
+      <tr><th>รหัสครุภัณฑ์</th><td>${esc(r.assetId)}</td><th>อาคาร</th><td>${esc(u.bld)}</td></tr>
+      <tr><th>ประเภทงาน</th><td>${esc(r.type)}</td><th>ผู้ปฏิบัติงาน</th><td>${esc(r.tech)}${r.company?" ("+esc(r.company)+")":""}</td></tr></table>
+    <table><thead><tr><th style="width:10mm">ข้อ</th><th>รายการตรวจสอบ</th><th class="c">ผ่าน</th><th class="c">ไม่ผ่าน</th><th class="c">N/A</th><th style="width:48mm">หมายเหตุ</th></tr></thead>
+      <tbody>${groups.map(([g,items],gi)=>`<tr class="g"><td>${gi+1}</td><td colspan="5">${g}</td></tr>`+items.map(([k,t],ii)=>{ const c=r.checks?.[k];
+        return `<tr><td>${gi+1}.${ii+1}</td><td>${t}</td><td class="c">${mk(c,"ok")}</td><td class="c">${mk(c,"ng")}</td><td class="c">${mk(c,"na")}</td><td>${esc(r.ngNotes?.[k]||"")}</td></tr>`; }).join("")).join("")}</tbody></table>
+    ${meas.length? `<table><tr>${meas.map(([k,t,unit])=>`<th>${t}</th><td>${esc(r.measures[k])} ${unit}</td>`).join("")}</tr></table>`:""}
+    <table><tr><th style="width:38mm">สถานะหลังตรวจ</th><td><b>${esc(r.result)}</b></td></tr>
+      <tr><th>อะไหล่ / วัสดุที่เปลี่ยน</th><td>${esc(r.parts||"-")}</td></tr>
+      <tr><th>หมายเหตุ</th><td>${esc(r.remark||"-")}</td></tr></table>
+    <div class="rsigs">${sig(r.sigTech, r.tech, "ช่างผู้ตรวจ")}${sig(r.sigAcc, r.acceptor, "ผู้ตรวจรับงาน")}</div>
+  </div>`;
+}
+
+/* ---------- history ---------- */
+function filteredHistory(){
+  const q=$("#hq").value.trim().toLowerCase(), m=$("#hm").value;
+  return records.filter(r=>{
+    if(m && !r.date.startsWith(m)) return false;
+    if(q && !((r.tag||"")+" "+(BY_ID[r.assetId]?.name||"")+" "+r.tech+" "+r.assetId).toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||"").localeCompare(a.createdAt||""));
+}
+function renderHistory(){
+  const rows=filteredHistory();
+  $("#htable").innerHTML = rows.length ? `<div class="tablewrap"><table>
+    <thead><tr><th>วันที่</th><th>ลิฟต์</th><th>ประเภทงาน</th><th>ช่าง</th><th>ผลตรวจ</th><th>สถานะหลังตรวจ</th><th>หมายเหตุ</th><th></th></tr></thead>
+    <tbody>${rows.map(r=>{ const u=BY_ID[r.assetId]; const ng=Object.values(r.checks||{}).filter(v=>v==="ng").length;
+      return `<tr><td class="mono">${thDate(r.date)}</td><td><a href="#" data-open="${r.assetId}" style="color:var(--steel);font-weight:600">${esc(u?.tag||r.tag)}</a> <span class="muted">${esc(u?.group||"")}</span></td>
+      <td>${esc(r.type)}</td><td>${esc(r.tech)}</td>
+      <td class="wrap">${ng? `<span class="chip bad">ไม่ผ่าน ${ng}</span> `+esc(ngText(r)) : `<span class="chip ok">ผ่านทั้งหมด</span>`}</td>
+      <td>${esc(r.result)}</td><td class="wrap">${esc(r.remark)}</td><td><button class="btn" data-report="${r.row}">ใบรายงาน</button></td></tr>`; }).join("")}</tbody></table></div>`
+    : `<div class="empty">${dbReady? "ยังไม่มีประวัติ PM ในช่วงนี้ เริ่มได้จากแท็บ “ลิฟต์ทั้งหมด” → บันทึก PM หรือสแกน QR หน้าลิฟต์" : "กำลังโหลดประวัติ PM…"}</div>`;
+}
+$("#csv").onclick = async ()=>{
+  const rows=filteredHistory();
+  const keys=[...LIFT_CHECKS,...ESC_CHECKS].flatMap(g=>g[1].map(i=>i[0]));
+  const head=["วันที่","รหัสลิฟต์","ชื่อ","อาคาร","รหัสครุภัณฑ์","ประเภทงาน","ช่าง","บริษัท","ไม่ผ่าน","รายการไม่ผ่าน","ระยะจอด(มม.)","สถานะหลังตรวจ","หมายเหตุ",...keys.map(labelOf)];
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const lines=[head.map(q).join(",")].concat(rows.map(r=>{ const u=BY_ID[r.assetId]||{};
+    return [r.date,u.tag||r.tag,u.name,u.bld,"'"+r.assetId,r.type,r.tech,r.company,Object.values(r.checks||{}).filter(v=>v==="ng").length,ngText(r),r.leveling??"",r.result,r.remark,
+      ...keys.map(k=>({ok:"ผ่าน",ng:"ไม่ผ่าน",na:"N/A"}[r.checks?.[k]]||""))].map(q).join(","); }));
+  saveFile(`PM-ลิฟต์-${$("#hm").value||todayISO()}.csv`, "﻿"+lines.join("\r\n"), "text/csv;charset=utf-8");
+  toast("ดาวน์โหลด CSV แล้ว");
+};
+function saveFile(name, text, type){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+["#hq","#hm"].forEach(s=>$(s).addEventListener("input", renderHistory));
+
+/* ---------- QR ---------- */
+const qrSel = new Set();
+function qrPayload(u){ return APP_URL.startsWith("http") ? `${APP_URL}?id=${u.id}` : u.id; }
+function qrSvg(text){ const q=qrcode(0,"M"); q.addData(text); q.make(); return q.createSvgTag({cellSize:4, margin:2, scalable:true}); }
+function qrUnits(){ const b=$("#qb").value, k=$("#qk").value; return UNITS.filter(u=>(!b||u.group===b)&&(!k||u.kind===k)); }
+function renderQR(){
+  const list=qrUnits();
+  $("#qgrid").innerHTML = list.map(u=>`<label class="label ${qrSel.has(u.id)?"":"off"}">
+      <input type="checkbox" data-q="${u.id}" ${qrSel.has(u.id)?"checked":""} aria-label="เลือก ${esc(u.tag)}">
+      <span class="lt">${esc(u.tag)}</span>${qrSvg(qrPayload(u))}
+      <span class="ln">${esc(u.type)} · ${esc(u.group)}</span><span class="li">${esc(u.id)}</span></label>`).join("");
+  $("#qcount").textContent = `เลือก ${list.filter(u=>qrSel.has(u.id)).length} จาก ${list.length} ป้าย`;
+}
+$("#qgrid").addEventListener("change", e=>{ const id=e.target.dataset.q; if(!id) return; e.target.checked? qrSel.add(id):qrSel.delete(id); e.target.closest(".label").classList.toggle("off",!e.target.checked); $("#qcount").textContent=`เลือก ${qrUnits().filter(u=>qrSel.has(u.id)).length} จาก ${qrUnits().length} ป้าย`; });
+["#qb","#qk"].forEach(s=>$(s).addEventListener("change", renderQR));
+$("#qall").onclick=()=>{ qrUnits().forEach(u=>qrSel.add(u.id)); renderQR(); };
+$("#qnone").onclick=()=>{ qrUnits().forEach(u=>qrSel.delete(u.id)); renderQR(); };
+// print straight from the app: labels go into #printarea, print CSS hides everything else
+$("#qprint").onclick = async ()=>{
+  const list=qrUnits().filter(u=>qrSel.has(u.id));
+  if(!list.length){ toast("ยังไม่ได้เลือกป้าย"); return; }
+  const q = labelsParts(list, +$("#qs").value, "#printarea ");
+  $("#printarea").innerHTML = `<style>${q.css}</style>${q.body}`;
+  try{ await document.fonts.ready; }catch{}
+  setTimeout(()=>{ window.print(); }, 150);
+};
+$("#qtab").onclick = ()=>{
+  const list=qrUnits().filter(u=>qrSel.has(u.id));
+  if(!list.length){ toast("ยังไม่ได้เลือกป้าย"); return; }
+  const doc = labelsDoc(list, +$("#qs").value);
+  const w = window.open("", "_blank");
+  if(w){ w.document.open(); w.document.write(doc); w.document.close(); }
+  else { saveFile(`QR-ลิฟต์-${list.length}ป้าย.html`, doc, "text/html;charset=utf-8"); toast("เบราว์เซอร์บล็อกหน้าต่างใหม่ จึงดาวน์โหลดเป็นไฟล์แทน เปิดไฟล์เพื่อสั่งพิมพ์"); }
+};
+function labelsParts(list, per, S=""){
+  // sizes chosen so every label fits its cell on A4 (275mm printable height)
+  const L = {8:{c:2,r:4,qr:36,tag:20,name:9.5,small:false}, 15:{c:3,r:5,qr:27,tag:15,name:8,small:false}, 24:{c:3,r:8,qr:17,tag:11,name:6.5,small:true},
+    40:{c:4,r:10,qr:20,tag:11,name:5.5,small:true,row:true}}[per];
+  const gap = L.row ? 2 : 3;
+  const pages=[]; for(let i=0;i<list.length;i+=per) pages.push(list.slice(i,i+per));
+  // 40-up: QR on the left, text on the right, so the cell stays short enough for 10 rows
+  const cell = u=> L.row
+    ? `<div class="lb row"><div class="qr">${qrSvg(qrPayload(u))}</div><div class="tx"><div class="tg">${esc(u.tag)}</div><div class="nm">${esc(u.type)} · ${esc(u.group)}</div><div class="id">${esc(u.id)}</div></div></div>`
+    : `<div class="lb">${L.small?"":`<div class="hd">PM ลิฟต์ · สแกนเพื่อบันทึก</div>`}<div class="tg">${esc(u.tag)}</div>
+    <div class="qr">${qrSvg(qrPayload(u))}</div><div class="nm">${L.small? esc(u.type)+" · "+esc(u.group) : esc(u.name)+"<br>"+esc(u.group)+" · อาคาร"+esc(u.bld)}</div><div class="id">${esc(u.id)}</div></div>`;
+  const css = `${S}.pg{display:grid;grid-template-columns:repeat(${L.c},1fr);grid-template-rows:repeat(${L.r},1fr);gap:${gap}mm;height:275mm;page-break-after:always;break-after:page;font-family:"IBM Plex Sans Thai",Tahoma,sans-serif;color:#111}
+${S}.pg:last-child{page-break-after:auto;break-after:auto}
+${S}.lb{border:0.4mm dashed #888;border-radius:2mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2mm;overflow:hidden;background:#fff}
+${S}.hd{font-size:${L.name*.85}pt;font-weight:700;background:#1f3a4d;color:#fff;border-radius:1mm;padding:0 2mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+${S}.tg{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:${L.tag}pt;color:#1f3a4d;line-height:1.15}
+${S}.qr svg{width:${L.qr}mm;height:${L.qr}mm;display:block}
+${S}.nm{font-size:${L.name}pt;line-height:1.25}${S}.id{font-family:"IBM Plex Mono",monospace;font-size:${L.name*.8}pt;color:#444}
+${S}.lb.row{flex-direction:row;justify-content:flex-start;gap:1.5mm;padding:1mm 1.5mm;text-align:left;border-radius:1.5mm}
+${S}.lb.row .qr{flex:none}
+${S}.tx{min-width:0;display:flex;flex-direction:column;gap:0.5mm}`;
+  return { css, body: pages.map(p=>`<div class="pg">${p.map(cell).join("")}</div>`).join("") };
+}
+function labelsDoc(list, per){
+  const p = labelsParts(list, per);
+  return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>QR Code ลิฟต์ (${list.length} ป้าย)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600&family=IBM+Plex+Sans+Thai:wght@500;700&display=swap">
+<style>@page{size:A4;margin:8mm}*{box-sizing:border-box}body{margin:0}
+${p.css}
+.tip{font-size:10pt;padding:6mm;background:#fff6dc;border-bottom:1px solid #e5c56a;font-family:Tahoma,sans-serif}@media print{.tip{display:none}}</style></head><body>
+<div class="tip">หน้าต่างพิมพ์จะเปิดขึ้นเอง ถ้าไม่ขึ้นให้กด Ctrl+P · ตั้งขนาดกระดาษ A4 และสเกล 100% · แนะนำพิมพ์บนสติกเกอร์กันน้ำ</div>
+${p.body}
+<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),700))<\/script></body></html>`;
+}
+
+/* ---------- tabs & hash ---------- */
+function setTab(t){
+  tab=t;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===t || (t==="unit"&&b.dataset.tab==="units"))));
+  $("#v-units").hidden = t!=="units"; $("#v-unit").hidden = t!=="unit"; $("#v-history").hidden = t!=="history"; $("#v-qr").hidden = t!=="qr";
+  render();
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>{ formUnit=null; setTab(b.dataset.tab); });
+["#q","#fb","#fs"].forEach(s=>$(s).addEventListener("input", renderList));
+function render(){
+  if(tab==="units"){ renderStrip(); renderList(); }
+  else if(tab==="unit"){ if(!document.querySelector("#pmform")) renderUnit(); }
+  else if(tab==="history") renderHistory();
+  else if(tab==="qr") renderQR();
+}
+/* ---------- data (Google Sheet ผ่าน google.script.run) ---------- */
+// lifts by number (L1, L2 … L46), then dumbwaiters, escalators, anything else; groups follow from that order
+function sortKey(u){
+  const m=/^L(\d+)$/i.exec(u.tag); if(m) return [0, +m[1], ""];
+  return [u.kind==="E"? 2 : /ขนของ/.test(u.type)? 1 : 3, 0, u.tag];
+}
+function sortUnits(list){
+  const firstNum={}; list.forEach(u=>{ const k=sortKey(u); const v=k[0]*1000+k[1]; if(!(u.group in firstNum) || v<firstNum[u.group]) firstNum[u.group]=v; });
+  return list.slice().sort((a,b)=>{ const ka=sortKey(a), kb=sortKey(b);
+    return firstNum[a.group]-firstNum[b.group] || ka[0]-kb[0] || ka[1]-kb[1] || ka[2].localeCompare(kb[2]); });
+}
+function fillGroupSelect(sel){
+  const el=$(sel), keep=el.value, groups=[...new Set(UNITS.map(u=>u.group))];
+  el.innerHTML = `<option value="">ทุกกลุ่มลิฟต์</option>` + groups.map(g=>`<option>${esc(g)}</option>`).join("");
+  if(groups.includes(keep)) el.value=keep;
+}
+/* ---------- in-app QR scanner: live camera when allowed, otherwise take a photo of the label ---------- */
+let scanStream=null, scanTimer=null;
+function idFromScan(text){
+  text=String(text||"").trim();
+  let id=text; try{ const u=new URL(text); id=u.searchParams.get("id")||text; }catch{}
+  if(BY_ID[id]) return id;
+  const byTag=UNITS.find(u=>u.tag.toLowerCase()===id.toLowerCase().replace(/\s+/g,""));
+  return byTag? byTag.id : null;
+}
+function openScanner(){
+  const ov=document.createElement("div"); ov.className="overlay"; ov.id="scanov";
+  ov.innerHTML=`<div class="scanbox" role="dialog" aria-label="สแกน QR ลิฟต์">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="font-size:1.05rem">สแกน QR หน้าลิฟต์</h2><button class="btn" id="scanclose">ปิด</button></div>
+    <video id="scanvid" playsinline muted hidden></video>
+    <p class="muted" id="scanmsg" style="margin:0">กำลังเปิดกล้อง…</p>
+    <label class="btn dark" style="text-align:center">ถ่ายรูปป้าย QR<input type="file" accept="image/*" capture="environment" id="scanfile" hidden></label>
+    <div class="scanrow"><input id="scantag" placeholder="หรือพิมพ์เลขลิฟต์ เช่น L16" autocomplete="off"><button class="btn primary" id="scango">เปิดฟอร์ม</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  const msg=t=>ov.querySelector("#scanmsg").textContent=t;
+  const done=id=>{ closeScanner(); showUnit(id,true); toast("เปิดฟอร์ม PM "+BY_ID[id].tag); };
+  ov.querySelector("#scanclose").onclick=closeScanner;
+  ov.addEventListener("click",e=>{ if(e.target===ov) closeScanner(); });
+  ov.querySelector("#scango").onclick=()=>{ const id=idFromScan(ov.querySelector("#scantag").value); id? done(id) : msg("ไม่พบเลขลิฟต์นี้ ลองพิมพ์ใหม่ เช่น L16"); };
+  ov.querySelector("#scantag").addEventListener("keydown",e=>{ if(e.key==="Enter") ov.querySelector("#scango").click(); });
+  ov.querySelector("#scanfile").onchange=e=>{
+    const f=e.target.files[0]; if(!f) return; msg("กำลังอ่าน QR จากรูป…");
+    const img=new Image(); img.onload=()=>{
+      const s=Math.min(1,1400/Math.max(img.width,img.height)), c=document.createElement("canvas");
+      c.width=img.width*s; c.height=img.height*s; const x=c.getContext("2d"); x.drawImage(img,0,0,c.width,c.height);
+      const r=window.jsQR && jsQR(x.getImageData(0,0,c.width,c.height).data,c.width,c.height);
+      const id=r && idFromScan(r.data);
+      id? done(id) : msg(r? "QR นี้ไม่ใช่ป้ายลิฟต์ในระบบ" : "อ่าน QR ในรูปไม่ได้ ถ่ายใหม่ให้ป้ายอยู่กลางภาพและไม่เบลอ");
+      URL.revokeObjectURL(img.src);
+    }; img.src=URL.createObjectURL(f);
+  };
+  if(!navigator.mediaDevices?.getUserMedia || !window.jsQR){ msg("เปิดกล้องในหน้านี้ไม่ได้ กด “ถ่ายรูปป้าย QR” แทน"); return; }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(stream=>{
+    scanStream=stream; const v=ov.querySelector("#scanvid"); v.srcObject=stream; v.hidden=false; v.play(); msg("หันกล้องไปที่ป้าย QR");
+    const c=document.createElement("canvas"), x=c.getContext("2d",{willReadFrequently:true});
+    scanTimer=setInterval(()=>{
+      if(!v.videoWidth) return; c.width=v.videoWidth; c.height=v.videoHeight; x.drawImage(v,0,0);
+      const r=jsQR(x.getImageData(0,0,c.width,c.height).data,c.width,c.height);
+      if(r){ const id=idFromScan(r.data); id? done(id) : msg("QR นี้ไม่ใช่ป้ายลิฟต์ในระบบ"); }
+    }, 250);
+  }).catch(()=>msg("เปิดกล้องในหน้านี้ไม่ได้ กด “ถ่ายรูปป้าย QR” แทน หรือใช้แอพกล้องของมือถือสแกนป้ายได้เลย"));
+}
+function closeScanner(){
+  clearInterval(scanTimer); scanTimer=null;
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  $("#scanov")?.remove();
+}
+$("#scanbtn").onclick=()=>{ if(!UNITS.length){ toast("ยังโหลดรายชื่อลิฟต์ไม่เสร็จ"); return; } openScanner(); };
+
+function showBanner(kind, title, text){ $("#banner").innerHTML = title? `<div class="banner ${kind}"><b>${esc(title)}</b>${text}</div>` : ""; }
+function applyData(data){
+  APP_URL = data.appUrl || "";
+  const first = !UNITS.length;
+  UNITS = sortUnits(data.assets.map(u=>({...u, group: u.group || "อื่นๆ"})));
+  BY_ID = Object.fromEntries(UNITS.map(u=>[u.id,u]));
+  fillGroupSelect("#fb"); fillGroupSelect("#qb");
+  records = data.records.filter(r=>r.assetId && r.date);
+  if(first) UNITS.forEach(u=>qrSel.add(u.id));
+  dbReady = true;
+  $("#conn").textContent = `${UNITS.length} ตัว · ${records.length} บันทึก PM`;
+}
+let loadTimer=null;
+function load(){
+  clearTimeout(loadTimer);
+  if(!dbReady) loadTimer=setTimeout(()=>{ if(!dbReady) showBanner("info","ยังโหลดข้อมูลไม่เสร็จ","Google Sheet ตอบช้ากว่าปกติ รออีกสักครู่ หรือกดรีเฟรชหน้านี้"); }, 15000);
+  google.script.run
+    .withSuccessHandler(data=>{
+      clearTimeout(loadTimer);
+      if(!data || !Array.isArray(data.assets)){ showBanner("bad","ได้ข้อมูลกลับมาไม่ครบ","ลองรันฟังก์ชัน <b style='display:inline'>setup</b> ใน Apps Script อีกครั้ง แล้ว Deploy เป็น New version"); $("#conn").textContent="โหลดไม่สำเร็จ"; return; }
+      if(!data.assets.length){ showBanner("bad","ชีต Assets ยังไม่มีรายชื่อลิฟต์","เปิด Apps Script แล้วรันฟังก์ชัน setup หนึ่งครั้ง ระบบจะใส่ลิฟต์ทั้ง 59 ตัวให้"); }
+      else showBanner();
+      applyData(data);
+      if(START_ID && BY_ID[START_ID]){ const id=START_ID; START_ID=null; showUnit(id, true); }
+      else render();
+    })
+    .withFailureHandler(err=>{
+      clearTimeout(loadTimer);
+      $("#conn").textContent="โหลดไม่สำเร็จ";
+      showBanner("bad","โหลดข้อมูลลิฟต์ไม่สำเร็จ", esc(err?.message||"ไม่ทราบสาเหตุ")+"<br>วิธีแก้: เปิด Apps Script → เลือกฟังก์ชัน setup → กด Run แล้ว Deploy เป็น New version");
+    })
+    .getData();
+}
+setTab("units");
+if(!(window.google && google.script && google.script.run)){
+  // opened as a plain file (not through the Apps Script web app link), so there is no server to talk to
+  $("#conn").textContent="ไม่ได้เชื่อมต่อ";
+  showBanner("bad","เปิดแอพผิดช่องทาง จึงไม่เห็นรายชื่อลิฟต์",
+    "ไฟล์ Index.html ต้องเปิดผ่านลิงก์ Web app ที่ลงท้ายด้วย <span class='mono'>/exec</span> เท่านั้น<br>หาลิงก์ได้ที่ Apps Script → Deploy → Manage deployments → คัดลอก Web app URL");
+  $("#list").innerHTML = "";
+}else{
+  google.script.url.getLocation(loc=>{ START_ID = (loc.parameter && loc.parameter.id) || null; load(); });
+}
+// refresh every 2 minutes so several technicians see each other's work, but never while a form is open
+setInterval(()=>{ if(dbReady && !document.querySelector("#pmform") && !document.hidden) load(); }, 120000);
+</script>
+<div id="printarea"></div>
+</body></html>
