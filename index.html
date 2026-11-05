@@ -169,6 +169,17 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
   .item .seg{grid-column:2/-1;justify-self:start}
   .item .note{grid-column:1/-1}
 }
+/* photos */
+.phbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.phgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.ph{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--bg);min-width:0}
+.ph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;max-width:100%;display:block}
+.ph input{width:100%;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font-size:.85rem}
+.ph .btn{padding:4px 8px;font-size:.8rem}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.gallery figure{margin:0;display:flex;flex-direction:column;gap:4px}
+.gallery img{width:100%;border-radius:8px;max-width:100%;display:block;background:var(--bg)}
+.gallery figcaption{font-size:.85rem;color:var(--muted)}
 /* scanner */
 .overlay{position:fixed;inset:0;z-index:30;background:rgba(10,16,22,.72);display:grid;place-items:center;
   padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -245,7 +256,28 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
 </div>
 
 <script>
+// ใช้เฉพาะเมื่อวางไฟล์นี้บน GitHub Pages: ใส่ลิงก์ Web app ของ Apps Script (ลงท้ายด้วย /exec)
+// ถ้าเปิดผ่าน Apps Script โดยตรง ปล่อยว่างไว้ได้
+const API_URL = "https://script.google.com/macros/s/AKfycbyleaYN6UoUiQ9S0LDmmHfgG1fNBUxfSIm9gqPHw58ExM7R9qJr7cbDCgHOkmZk9DYZoA/exec";
+
 let APP_URL = "", UNITS = [], BY_ID = {}, START_ID = null;
+const HAS_GAS = !!(window.google && google.script && google.script.run);
+const HAS_API = /^https:\/\/script\.google\.com\/.+\/exec$/.test(API_URL);
+
+// call a Code.gs function: google.script.run inside Apps Script, JSON over fetch everywhere else
+function server(fn, arg){
+  if(HAS_GAS) return new Promise((res,rej)=>{
+    const r=google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+    arg===undefined ? r[fn]() : r[fn](arg);
+  });
+  if(!HAS_API) return Promise.reject(new Error("NO_SERVER"));
+  const req = fn==="savePM"
+    ? fetch(API_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({action:fn, arg})})
+    : fetch(API_URL+"?api="+fn+(arg!=null? "&arg="+encodeURIComponent(arg) : ""));
+  return req.then(r=>r.json(), ()=>{ throw new Error("ติดต่อ Apps Script ไม่ได้ ตรวจว่า Deploy ตั้ง Who has access เป็น Anyone และลิงก์ /exec ถูกต้อง"); })
+    .then(j=>{ if(!j || !j.ok) throw new Error(j?.error || "Apps Script ตอบกลับไม่ถูกต้อง"); return j.data; },
+          e=>{ throw e instanceof SyntaxError ? new Error("Apps Script ตอบกลับเป็นหน้าเว็บแทนข้อมูล ตรวจว่า Deploy ตั้ง Who has access เป็น Anyone") : e; });
+}
 const CYCLE = 30, SOON = 7;
 
 const LIFT_CHECKS = [
@@ -310,7 +342,7 @@ function statusOf(id){
 }
 function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
 
-/* ---------- units list ---------- */
+// ---------- units list ----------
 function renderStrip(){
   const c={bad:0,warn:0,ok:0,none:0}; UNITS.forEach(u=>c[statusOf(u.id).k]++);
   const ym=todayISO().slice(0,7), doneMonth=new Set(records.filter(r=>r.date.startsWith(ym)).map(r=>r.assetId)).size;
@@ -355,9 +387,10 @@ document.addEventListener("click", e=>{
   const o=e.target.closest("[data-open]"); if(o){ e.preventDefault(); showUnit(o.dataset.open, false); return; }
   const p=e.target.closest("[data-pm]"); if(p){ showUnit(p.dataset.pm, true); return; }
   const rp=e.target.closest("[data-report]"); if(rp){ printReport(rp.dataset.report); return; }
+  const ph=e.target.closest("[data-photos]"); if(ph){ viewPhotos(ph.dataset.photos); return; }
 });
 
-/* ---------- unit detail + PM form ---------- */
+// ---------- unit detail + PM form ----------
 function showUnit(id, withForm){
   const u=BY_ID[id]; if(!u) return;
   openUnit=id; formUnit = withForm? id : null;
@@ -399,6 +432,7 @@ function histRow(r){
     <div style="min-width:0"><b>${esc(r.type)}</b> · ${esc(r.tech)}${r.company?" ("+esc(r.company)+")":""}
       <p>${ng? `ไม่ผ่าน ${ng} รายการ: `+esc(ngText(r)) : "ผ่านทุกรายการ"}${r.remark? " · "+esc(r.remark):""}</p></div>
     <span class="d" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="chip ${cls}">${esc(r.result||"")}</span>
+      ${r.photoCount? `<button class="btn" data-photos="${r.row}">ดูรูป (${r.photoCount})</button>`:""}
       <button class="btn" data-report="${r.row}">ใบรายงาน</button></span></div>`;
 }
 function checksFor(u){ return u.kind==="E"? ESC_CHECKS : LIFT_CHECKS; }
@@ -410,6 +444,7 @@ const MEASURES = {
   E: [["temp","อุณหภูมิตู้ควบคุม","°C"],["hours","ชั่วโมงทำงานสะสม","ชม."]]
 };
 const nowHM = () => new Date().toTimeString().slice(0,5);
+const MAX_PHOTOS = 6;
 
 function renderForm(){
   const u=BY_ID[formUnit], s=statusOf(u.id);
@@ -472,7 +507,18 @@ function renderForm(){
     </div>
 
     <div class="sec">
-      <div class="sec-h"><span class="sec-n">5</span><h3>ลงนาม</h3></div>
+      <div class="sec-h"><span class="sec-n">5</span><h3>รูปภาพประกอบ</h3><span class="muted" id="ph-n">0/${MAX_PHOTOS} รูป</span></div>
+      <div class="phbtns">
+        <label class="btn dark">ถ่ายรูป<input type="file" accept="image/&#42;" capture="environment" id="ph-cam" hidden></label>
+        <label class="btn">เลือกจากคลังภาพ<input type="file" accept="image/&#42;" multiple id="ph-pick" hidden></label>
+        <span class="muted" style="font-size:.82rem">เช่น สภาพก่อน-หลังแก้ไข จุดที่พบปัญหา อะไหล่ที่เปลี่ยน</span>
+      </div>
+      <div class="phgrid" id="ph-grid"></div>
+      <datalist id="ph-caps"><option>ก่อนแก้ไข</option><option>หลังแก้ไข</option><option>จุดที่พบปัญหา</option><option>อะไหล่ที่เปลี่ยน</option><option>ห้องเครื่อง</option><option>บ่อลิฟต์</option><option>ภายในตู้ลิฟต์</option></datalist>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><span class="sec-n">6</span><h3>ลงนาม</h3></div>
       <div class="sigs">
         <div class="sig"><span class="muted">ลายเซ็นช่างผู้ตรวจ</span><canvas id="sig-tech" aria-label="ช่องเซ็นชื่อช่าง"></canvas>
           <div class="row2"><span id="sig-tech-name">${esc(store.get("pm.tech")||"(ชื่อช่าง)")}</span><button type="button" class="btn" data-clear="sig-tech">ล้าง</button></div></div>
@@ -492,6 +538,24 @@ function renderForm(){
   slot.replaceWith(form);
   const pads = { "sig-tech": sigPad(form.querySelector("#sig-tech")), "sig-acc": sigPad(form.querySelector("#sig-acc")) };
   form._pads = pads;
+  form._photos = [];
+  const drawPhotos = ()=>{
+    form.querySelector("#ph-n").textContent = `${form._photos.length}/${MAX_PHOTOS} รูป`;
+    form.querySelector("#ph-grid").innerHTML = form._photos.map((p,i)=>`<div class="ph">
+      <img src="${p.data}" alt="รูปที่ ${i+1}">
+      <input list="ph-caps" data-cap="${i}" value="${esc(p.cap)}" placeholder="คำอธิบายรูป" maxlength="100">
+      <button type="button" class="btn" data-delph="${i}" aria-label="ลบรูปที่ ${i+1}">ลบ</button></div>`).join("");
+  };
+  const addFiles = async files=>{
+    for(const f of [...files]){
+      if(form._photos.length>=MAX_PHOTOS){ toast(`แนบได้สูงสุด ${MAX_PHOTOS} รูป`); break; }
+      try{ form._photos.push({data: await shrinkImage(f), cap:""}); drawPhotos(); }
+      catch{ toast("เปิดรูปนี้ไม่ได้ ลองถ่ายใหม่ หรือเลือกรูป .jpg/.png"); }
+    }
+  };
+  ["#ph-cam","#ph-pick"].forEach(s=>form.querySelector(s).addEventListener("change", e=>{ addFiles(e.target.files); e.target.value=""; }));
+  form.querySelector("#ph-grid").addEventListener("input", e=>{ const i=e.target.dataset.cap; if(i!=null) form._photos[i].cap=e.target.value; });
+  form.querySelector("#ph-grid").addEventListener("click", e=>{ const i=e.target.dataset.delph; if(i!=null){ form._photos.splice(+i,1); drawPhotos(); } });
   const update = ()=>{
     const done=form.querySelectorAll('.seg input:checked').length, ng=form.querySelectorAll('.seg input[value="ng"]:checked').length;
     form.querySelector("#f-prog").textContent = `ตรวจแล้ว ${done}/${total} ข้อ${ng? ` · ไม่ผ่าน ${ng} ข้อ`:""}`;
@@ -514,6 +578,21 @@ function renderForm(){
   form.querySelectorAll("[data-clear]").forEach(b=>b.onclick=()=>pads[b.dataset.clear].clear());
   form.querySelector("#f-cancel").onclick=()=>{ formUnit=null; renderUnit(); };
   form.addEventListener("submit", e=>{ e.preventDefault(); savePM(form, u); });
+}
+
+// phone photos are 3–12 MB; shrink to ≤1280 px JPEG (~150–300 KB) before sending to Apps Script
+function shrinkImage(file, max=1280, quality=0.72){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{
+      const s=Math.min(1, max/Math.max(img.naturalWidth, img.naturalHeight));
+      const c=document.createElement("canvas"); c.width=Math.round(img.naturalWidth*s); c.height=Math.round(img.naturalHeight*s);
+      const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", quality));
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("bad image")); };
+    img.src=url;
+  });
 }
 
 // finger/mouse signature pad; exports a small PNG so it fits in one sheet cell
@@ -552,27 +631,42 @@ function savePM(form, u){
     assetId:u.id, tag:u.tag, date:v("#f-date"), type:v("#f-type"), start:v("#f-start"), end:v("#f-end") || nowHM(),
     tech, company:v("#f-co"), checks, ngNotes, measures, leveling: measures.lev ?? null,
     result: form.querySelector('input[name="f-res"]:checked').value, parts:v("#f-parts"), remark:v("#f-rem"),
-    acceptor:v("#f-acc"), sigTech: form._pads["sig-tech"].toData(), sigAcc: form._pads["sig-acc"].toData()
+    acceptor:v("#f-acc"), sigTech: form._pads["sig-tech"].toData(), sigAcc: form._pads["sig-acc"].toData(),
+    photos: form._photos.map(p=>({data:p.data.split(",")[1], cap:p.cap.trim()}))
   };
   rec.ngText = ngText(rec);
   store.set("pm.tech", tech); store.set("pm.co", rec.company);
-  const btn=form.querySelector("#f-save"); btn.disabled=true; btn.textContent="กำลังบันทึก…";
-  google.script.run
-    .withSuccessHandler(data=>{ applyData(data); formUnit=null; renderUnit(); toast(`บันทึก PM ${u.tag} แล้ว`); })
-    .withFailureHandler(err=>{
+  const btn=form.querySelector("#f-save"); btn.disabled=true;
+  btn.textContent = rec.photos.length ? `กำลังบันทึกและอัปโหลดรูป ${rec.photos.length} รูป…` : "กำลังบันทึก…";
+  server("savePM", rec)
+    .then(data=>{ applyData(data); formUnit=null; renderUnit(); toast(`บันทึก PM ${u.tag} แล้ว`); })
+    .catch(err=>{
       btn.disabled=false; btn.textContent="บันทึกผล PM";
       fail(`ยังไม่ได้บันทึก: ${esc(err?.message||"เชื่อมต่อไม่สำเร็จ")} ลองกดบันทึกอีกครั้ง`);
-    })
-    .savePM(rec);
+    });
 }
 
-/* ---------- printable PM report ---------- */
+// ---------- printable PM report ----------
 function printReport(row){
   toast("กำลังเตรียมใบรายงาน…");
-  google.script.run.withSuccessHandler(r=>{
+  server("getReport", row).then(async r=>{
     $("#printarea").innerHTML = reportHTML(r);
-    setTimeout(()=>window.print(), 300);
-  }).withFailureHandler(err=>toast("เปิดใบรายงานไม่ได้: "+(err?.message||""))).getReport(row);
+    await Promise.all([...$("#printarea").querySelectorAll("img")].map(i=>i.decode?.().catch(()=>{})));
+    setTimeout(()=>window.print(), 200);
+  }).catch(err=>toast("เปิดใบรายงานไม่ได้: "+(err?.message||"")));
+}
+function viewPhotos(row){
+  const ov=document.createElement("div"); ov.className="overlay"; ov.id="phov";
+  ov.innerHTML=`<div class="scanbox" style="width:min(900px,100%)" role="dialog" aria-label="รูปภาพประกอบ PM">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="font-size:1.05rem" id="phov-t">รูปภาพประกอบ</h2><button class="btn" id="phov-x">ปิด</button></div>
+    <div class="gallery" id="phov-g"><p class="muted">กำลังโหลดรูปจาก Google Drive…</p></div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector("#phov-x").onclick=close; ov.addEventListener("click",e=>{ if(e.target===ov) close(); });
+  server("getReport", row).then(r=>{
+    ov.querySelector("#phov-t").textContent = `รูปภาพประกอบ · ${r.tag} · ${thDate(r.date)}`;
+    ov.querySelector("#phov-g").innerHTML = (r.photos||[]).map((p,i)=>`<figure>${p.src?`<img src="${p.src}" alt="รูปที่ ${i+1}">`:""}<figcaption>${i+1}. ${esc(p.cap||"ไม่มีคำอธิบาย")}</figcaption></figure>`).join("") || `<p class="muted">ไม่มีรูป</p>`;
+  }).catch(err=>{ ov.querySelector("#phov-g").innerHTML=`<p class="notice bad">โหลดรูปไม่ได้: ${esc(err?.message||"")}</p>`; });
 }
 function reportHTML(r){
   const u=BY_ID[r.assetId]||{tag:r.tag,name:"",bld:"",group:"",type:"",kind:"L"};
@@ -593,6 +687,12 @@ function reportHTML(r){
   #printarea .rsigs{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:3mm;text-align:center}
   #printarea .ri{height:15mm;display:flex;align-items:flex-end;justify-content:center} #printarea .ri img{max-height:15mm;max-width:55mm}
   #printarea .rl{border-bottom:1px dotted #333;margin:0 10mm 1mm}
+  #printarea .rph{break-before:page;page-break-before:always}
+  #printarea .rpg{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
+  #printarea .rpg figure{margin:0;break-inside:avoid;page-break-inside:avoid}
+  #printarea .rpg img,#printarea .rnoimg{width:100%;height:72mm;object-fit:contain;border:1px solid #bbb;background:#fafafa;display:block}
+  #printarea .rnoimg{display:grid;place-items:center;color:#888}
+  #printarea .rpg figcaption{font-size:8.5pt;margin-top:1mm}
   </style>
   <div class="rp">
     <div class="rh"><div><h1>แบบบันทึกการบำรุงรักษาเชิงป้องกัน (Preventive Maintenance) ${u.kind==="E"?"บันไดเลื่อน":"ลิฟต์"}</h1>
@@ -609,10 +709,13 @@ function reportHTML(r){
       <tr><th>อะไหล่ / วัสดุที่เปลี่ยน</th><td>${esc(r.parts||"-")}</td></tr>
       <tr><th>หมายเหตุ</th><td>${esc(r.remark||"-")}</td></tr></table>
     <div class="rsigs">${sig(r.sigTech, r.tech, "ช่างผู้ตรวจ")}${sig(r.sigAcc, r.acceptor, "ผู้ตรวจรับงาน")}</div>
+    ${(r.photos||[]).length? `<div class="rph"><div class="rh"><div><h1>ภาพประกอบการบำรุงรักษา</h1><p>${esc(u.tag)} · ${esc(u.name)}</p></div>
+      <div class="rbox">เลขที่เอกสาร <b>${esc(r.docNo||("PM-"+r.row))}</b><br>วันที่ ${thDate(r.date)}</div></div>
+      <div class="rpg">${r.photos.map((p,i)=>`<figure>${p.src?`<img src="${p.src}" alt="">`:`<div class="rnoimg">ไม่มีรูป</div>`}<figcaption>รูปที่ ${i+1} ${esc(p.cap||"")}</figcaption></figure>`).join("")}</div></div>`:""}
   </div>`;
 }
 
-/* ---------- history ---------- */
+// ---------- history ----------
 function filteredHistory(){
   const q=$("#hq").value.trim().toLowerCase(), m=$("#hm").value;
   return records.filter(r=>{
@@ -629,7 +732,7 @@ function renderHistory(){
       return `<tr><td class="mono">${thDate(r.date)}</td><td><a href="#" data-open="${r.assetId}" style="color:var(--steel);font-weight:600">${esc(u?.tag||r.tag)}</a> <span class="muted">${esc(u?.group||"")}</span></td>
       <td>${esc(r.type)}</td><td>${esc(r.tech)}</td>
       <td class="wrap">${ng? `<span class="chip bad">ไม่ผ่าน ${ng}</span> `+esc(ngText(r)) : `<span class="chip ok">ผ่านทั้งหมด</span>`}</td>
-      <td>${esc(r.result)}</td><td class="wrap">${esc(r.remark)}</td><td><button class="btn" data-report="${r.row}">ใบรายงาน</button></td></tr>`; }).join("")}</tbody></table></div>`
+      <td>${esc(r.result)}</td><td class="wrap">${esc(r.remark)}</td><td style="display:flex;gap:6px">${r.photoCount? `<button class="btn" data-photos="${r.row}">รูป (${r.photoCount})</button>`:""}<button class="btn" data-report="${r.row}">ใบรายงาน</button></td></tr>`; }).join("")}</tbody></table></div>`
     : `<div class="empty">${dbReady? "ยังไม่มีประวัติ PM ในช่วงนี้ เริ่มได้จากแท็บ “ลิฟต์ทั้งหมด” → บันทึก PM หรือสแกน QR หน้าลิฟต์" : "กำลังโหลดประวัติ PM…"}</div>`;
 }
 $("#csv").onclick = async ()=>{
@@ -649,7 +752,7 @@ function saveFile(name, text, type){
 }
 ["#hq","#hm"].forEach(s=>$(s).addEventListener("input", renderHistory));
 
-/* ---------- QR ---------- */
+// ---------- QR ----------
 const qrSel = new Set();
 function qrPayload(u){ return APP_URL.startsWith("http") ? `${APP_URL}?id=${u.id}` : u.id; }
 function qrSvg(text){ const q=qrcode(0,"M"); q.addData(text); q.make(); return q.createSvgTag({cellSize:4, margin:2, scalable:true}); }
@@ -709,7 +812,7 @@ ${S}.tx{min-width:0;display:flex;flex-direction:column;gap:0.5mm}`;
 function labelsDoc(list, per){
   const p = labelsParts(list, per);
   return `<!doctype html><html lang="th"><head><meta charset="utf-8"><title>QR Code ลิฟต์ (${list.length} ป้าย)</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600&family=IBM+Plex+Sans+Thai:wght@500;700&display=swap">
+<link rel="stylesheet" href="https:&#47;&#47;fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600&family=IBM+Plex+Sans+Thai:wght@500;700&display=swap">
 <style>@page{size:A4;margin:8mm}*{box-sizing:border-box}body{margin:0}
 ${p.css}
 .tip{font-size:10pt;padding:6mm;background:#fff6dc;border-bottom:1px solid #e5c56a;font-family:Tahoma,sans-serif}@media print{.tip{display:none}}</style></head><body>
@@ -718,7 +821,7 @@ ${p.body}
 <script>window.addEventListener("load",()=>setTimeout(()=>window.print(),700))<\/script></body></html>`;
 }
 
-/* ---------- tabs & hash ---------- */
+// ---------- tabs & hash ----------
 function setTab(t){
   tab=t;
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===t || (t==="unit"&&b.dataset.tab==="units"))));
@@ -733,7 +836,7 @@ function render(){
   else if(tab==="history") renderHistory();
   else if(tab==="qr") renderQR();
 }
-/* ---------- data (Google Sheet ผ่าน google.script.run) ---------- */
+// ---------- data (Google Sheet ผ่าน google.script.run) ----------
 // lifts by number (L1, L2 … L46), then dumbwaiters, escalators, anything else; groups follow from that order
 function sortKey(u){
   const m=/^L(\d+)$/i.exec(u.tag); if(m) return [0, +m[1], ""];
@@ -749,7 +852,7 @@ function fillGroupSelect(sel){
   el.innerHTML = `<option value="">ทุกกลุ่มลิฟต์</option>` + groups.map(g=>`<option>${esc(g)}</option>`).join("");
   if(groups.includes(keep)) el.value=keep;
 }
-/* ---------- in-app QR scanner: live camera when allowed, otherwise take a photo of the label ---------- */
+// ---------- in-app QR scanner: live camera when allowed, otherwise take a photo of the label ----------
 let scanStream=null, scanTimer=null;
 function idFromScan(text){
   text=String(text||"").trim();
@@ -764,7 +867,7 @@ function openScanner(){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="font-size:1.05rem">สแกน QR หน้าลิฟต์</h2><button class="btn" id="scanclose">ปิด</button></div>
     <video id="scanvid" playsinline muted hidden></video>
     <p class="muted" id="scanmsg" style="margin:0">กำลังเปิดกล้อง…</p>
-    <label class="btn dark" style="text-align:center">ถ่ายรูปป้าย QR<input type="file" accept="image/*" capture="environment" id="scanfile" hidden></label>
+    <label class="btn dark" style="text-align:center">ถ่ายรูปป้าย QR<input type="file" accept="image/&#42;" capture="environment" id="scanfile" hidden></label>
     <div class="scanrow"><input id="scantag" placeholder="หรือพิมพ์เลขลิฟต์ เช่น L16" autocomplete="off"><button class="btn primary" id="scango">เปิดฟอร์ม</button></div>
   </div>`;
   document.body.appendChild(ov);
@@ -801,7 +904,7 @@ function closeScanner(){
   if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
   $("#scanov")?.remove();
 }
-$("#scanbtn").onclick=()=>{ if(!UNITS.length){ toast("ยังโหลดรายชื่อลิฟต์ไม่เสร็จ"); return; } openScanner(); };
+$("#scanbtn").onclick=()=>{ if(!UNITS.length){ toast(HAS_GAS||HAS_API? "ยังโหลดรายชื่อลิฟต์ไม่เสร็จ รอสักครู่" : "ยังไม่ได้เชื่อมกับ Apps Script ดูวิธีแก้ในกล่องสีแดง"); return; } openScanner(); };
 
 function showBanner(kind, title, text){ $("#banner").innerHTML = title? `<div class="banner ${kind}"><b>${esc(title)}</b>${text}</div>` : ""; }
 function applyData(data){
@@ -819,8 +922,8 @@ let loadTimer=null;
 function load(){
   clearTimeout(loadTimer);
   if(!dbReady) loadTimer=setTimeout(()=>{ if(!dbReady) showBanner("info","ยังโหลดข้อมูลไม่เสร็จ","Google Sheet ตอบช้ากว่าปกติ รออีกสักครู่ หรือกดรีเฟรชหน้านี้"); }, 15000);
-  google.script.run
-    .withSuccessHandler(data=>{
+  server("getData")
+    .then(data=>{
       clearTimeout(loadTimer);
       if(!data || !Array.isArray(data.assets)){ showBanner("bad","ได้ข้อมูลกลับมาไม่ครบ","ลองรันฟังก์ชัน <b style='display:inline'>setup</b> ใน Apps Script อีกครั้ง แล้ว Deploy เป็น New version"); $("#conn").textContent="โหลดไม่สำเร็จ"; return; }
       if(!data.assets.length){ showBanner("bad","ชีต Assets ยังไม่มีรายชื่อลิฟต์","เปิด Apps Script แล้วรันฟังก์ชัน setup หนึ่งครั้ง ระบบจะใส่ลิฟต์ทั้ง 59 ตัวให้"); }
@@ -829,22 +932,25 @@ function load(){
       if(START_ID && BY_ID[START_ID]){ const id=START_ID; START_ID=null; showUnit(id, true); }
       else render();
     })
-    .withFailureHandler(err=>{
+    .catch(err=>{
       clearTimeout(loadTimer);
       $("#conn").textContent="โหลดไม่สำเร็จ";
       showBanner("bad","โหลดข้อมูลลิฟต์ไม่สำเร็จ", esc(err?.message||"ไม่ทราบสาเหตุ")+"<br>วิธีแก้: เปิด Apps Script → เลือกฟังก์ชัน setup → กด Run แล้ว Deploy เป็น New version");
-    })
-    .getData();
+    });
 }
 setTab("units");
-if(!(window.google && google.script && google.script.run)){
-  // opened as a plain file (not through the Apps Script web app link), so there is no server to talk to
-  $("#conn").textContent="ไม่ได้เชื่อมต่อ";
-  showBanner("bad","เปิดแอพผิดช่องทาง จึงไม่เห็นรายชื่อลิฟต์",
-    "ไฟล์ Index.html ต้องเปิดผ่านลิงก์ Web app ที่ลงท้ายด้วย <span class='mono'>/exec</span> เท่านั้น<br>หาลิงก์ได้ที่ Apps Script → Deploy → Manage deployments → คัดลอก Web app URL");
-  $("#list").innerHTML = "";
-}else{
+if(HAS_GAS){
   google.script.url.getLocation(loc=>{ START_ID = (loc.parameter && loc.parameter.id) || null; load(); });
+}else if(HAS_API){
+  // hosted elsewhere (GitHub Pages): read ?id= from our own address
+  START_ID = new URLSearchParams(location.search).get("id");
+  load();
+}else{
+  // opened as a plain file with no Apps Script link set, so there is no server to talk to
+  $("#conn").textContent="ไม่ได้เชื่อมต่อ";
+  showBanner("bad","ยังไม่ได้เชื่อมกับ Apps Script จึงไม่เห็นรายชื่อลิฟต์",
+    "เปิดผ่านลิงก์ Web app ที่ลงท้ายด้วย <span class='mono'>/exec</span><br>หรือถ้าวางไฟล์นี้บน GitHub: ใส่ลิงก์ /exec ในบรรทัด <span class='mono'>const API_URL</span> ของไฟล์ index.html");
+  $("#list").innerHTML = "";
 }
 // refresh every 2 minutes so several technicians see each other's work, but never while a form is open
 setInterval(()=>{ if(dbReady && !document.querySelector("#pmform") && !document.hidden) load(); }, 120000);
