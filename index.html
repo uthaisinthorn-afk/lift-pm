@@ -214,6 +214,12 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
 .dx input{flex:1 1 160px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
 .dx input[type=number]{flex:0 0 120px}
 .h3s{font-size:.95rem;margin:0 0 6px}
+.signblk{align-items:stretch;text-align:center}
+.signblk > .muted:first-child{text-align:left}
+.fullname{display:flex;align-items:center;gap:4px;font-size:1.05rem;color:var(--ink)}
+.fullname input,.signblk .pos{flex:1;min-width:0;text-align:center;padding:8px 10px;border:0;border-bottom:1px dotted var(--muted);background:transparent;color:var(--ink);font-size:1rem}
+.signblk .pos{font-size:.88rem}
+.signdate{font-size:.82rem}
 .dph{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .dph .btn{padding:6px 10px;font-size:.84rem}
 .thumbs{display:flex;gap:6px;flex-wrap:wrap;width:100%}
@@ -1034,7 +1040,6 @@ function renderCheck(){
         <div class="grid2">
           <label class="field">ประจำวันที่<input type="date" id="d-date" value="${today}"></label>
           <label class="field">เวลา<input type="time" id="d-time" value="${nowHM()}"></label>
-          <label class="field">ชื่อเจ้าหน้าที่ช่างตรวจ *<input id="d-who" autocomplete="name" placeholder="ชื่อ-นามสกุล" value="${esc(store.get("pm.tech")||"")}"></label>
         </div></div>
       <div class="sec"><div class="sec-h"><span class="sec-n">2</span><h3>รายการที่ตรวจเช็ค (${F.items.length} ข้อ)</h3><button type="button" class="btn" id="d-allok">✓ ปกติทุกข้อ</button></div>
         <div class="legend">${DCODES.map(c=>`<span><b>${c[1]}</b> ${c[3]}</span>`).join("")}</div>
@@ -1048,11 +1053,27 @@ function renderCheck(){
             <div class="thumbs"></div></div></div>`).join("")}</div></div>
       <div class="sec"><div class="sec-h"><span class="sec-n">3</span><h3>รายการตรวจสอบและแก้ไขเพิ่มเติม</h3></div>
         <label class="field">หมายเหตุ<textarea id="d-rem" rows="3" placeholder="เช่น ไฟในตู้ดับ 1 ดวง แจ้งหัวหน้าช่างแล้ว"></textarea></label></div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">4</span><h3>ผู้ตรวจสอบ</h3></div>
+        <div class="sigs">
+          <div class="sig signblk"><span class="muted">ลายเซ็นผู้ตรวจสอบ *</span>
+            <canvas id="sig-insp" aria-label="ช่องเซ็นชื่อผู้ตรวจสอบ"></canvas>
+            <div class="row2"><span>เซ็นด้วยนิ้วในกรอบ</span><button type="button" class="btn" data-sclear="insp">ล้างลายเซ็น</button></div>
+            <label class="fullname">(<input id="d-who" autocomplete="name" placeholder="ชื่อ-นามสกุล ตัวเต็ม *" value="${esc(store.get("pm.tech")||"")}">)</label>
+            <input id="d-pos" class="pos" placeholder="ตำแหน่ง เช่น ช่างเทคนิคลิฟต์" value="${esc(store.get("pm.pos")||"")}">
+            <span class="muted signdate">วันที่ ${thDate(today)}</span></div>
+          <div class="sig signblk"><span class="muted">ลายเซ็นผู้ควบคุมงาน (ถ้ามี)</span>
+            <canvas id="sig-sup" aria-label="ช่องเซ็นชื่อผู้ควบคุมงาน"></canvas>
+            <div class="row2"><span>เซ็นด้วยนิ้วในกรอบ</span><button type="button" class="btn" data-sclear="sup">ล้างลายเซ็น</button></div>
+            <label class="fullname">(<input id="d-sup" autocomplete="off" placeholder="ชื่อ-นามสกุล ผู้ควบคุมงาน" value="${esc(store.get("pm.sup")||"")}">)</label>
+            <span class="muted signdate">ผู้ควบคุมงาน</span></div>
+        </div></div>
       <div id="d-msg" style="padding:0 16px"></div>
       <div class="formbar"><div class="prog"><span id="d-prog">ตรวจแล้ว 0/${F.items.length} ข้อ</span><i><b id="d-bar"></b></i></div>
         <div style="display:flex;gap:8px"><button class="btn" type="button" id="d-cancel">ยกเลิก</button><button class="btn primary" type="submit" id="d-save">บันทึกใบตรวจ</button></div></div>
     </form></div>`;
   const form=v.querySelector("#dcform"), total=F.items.length;
+  form._sig = { insp: sigPad(form.querySelector("#sig-insp")), sup: sigPad(form.querySelector("#sig-sup")) };
+  form.querySelectorAll("[data-sclear]").forEach(b=>b.onclick=()=>form._sig[b.dataset.sclear].clear());
   // photos per checklist item: form._iph[item] = {b:[dataURL…] before, a:[…] after}
   form._iph = Object.fromEntries(F.items.map(([k])=>[k,{b:[],a:[]}]));
   const nPhotos = ()=>Object.values(form._iph).reduce((n,p)=>n+p.b.length+p.a.length,0);
@@ -1113,10 +1134,16 @@ function saveDaily(form, u, F, f){
   if(missing.length) return fail(`ยังไม่ได้เลือกผลตรวจข้อ ${missing.join(", ")}`, form.querySelector(`.ditem[data-k="${F.items[missing[0]-1][0]}"]`));
   const noCount=Object.keys(counts).filter(k=>!counts[k]);
   if(noCount.length) return fail(`กรุณาใส่จำนวนชิ้นที่ชำรุด (ข้อ ${noCount.map(k=>F.items.findIndex(x=>x[0]===k)+1).join(", ")})`, form.querySelector("#dn-"+noCount[0]));
-  const who=val("#d-who"); if(!who) return fail("กรุณาใส่ชื่อเจ้าหน้าที่ช่างตรวจ (หัวข้อ 1)", form.querySelector("#d-who"));
   const date=val("#d-date"); if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail("กรุณาเลือกวันที่ตรวจ", form.querySelector("#d-date"));
-  store.set("pm.tech", who);
-  const rec={assetId:u.id, tag:u.tag, form:f, date, time:val("#d-time")||nowHM(), inspector:who, checks, counts, notes, labels,
+  if(form._sig.insp.isEmpty()) return fail("กรุณาเซ็นชื่อผู้ตรวจสอบ (หัวข้อ 4)", form.querySelector("#sig-insp"));
+  const who=val("#d-who").replace(/\s+/g," ");
+  if(!who) return fail("กรุณาใส่ชื่อ-นามสกุลผู้ตรวจสอบ (หัวข้อ 4)", form.querySelector("#d-who"));
+  if(!/\S+\s+\S+/.test(who)) return fail("กรุณาใส่ชื่อเต็ม ทั้งชื่อและนามสกุล (หัวข้อ 4)", form.querySelector("#d-who"));
+  const pos=val("#d-pos"), sup=val("#d-sup").replace(/\s+/g," ");
+  if(!form._sig.sup.isEmpty() && !sup) return fail("ผู้ควบคุมงานเซ็นแล้ว กรุณาใส่ชื่อ-นามสกุลผู้ควบคุมงานด้วย", form.querySelector("#d-sup"));
+  store.set("pm.tech", who); store.set("pm.pos", pos); if(sup) store.set("pm.sup", sup);
+  const rec={assetId:u.id, tag:u.tag, form:f, date, time:val("#d-time")||nowHM(), inspector:who, position:pos, supervisor:sup,
+    sigInsp:form._sig.insp.toData(), sigSup:form._sig.sup.toData(), checks, counts, notes, labels,
     remark:val("#d-rem"),
     before: F.items.flatMap(([k,t])=>form._iph[k].b.map(src=>({data:src.split(",")[1], cap:t, k}))),
     after: F.items.flatMap(([k,t])=>form._iph[k].a.map(src=>({data:src.split(",")[1], cap:t, k})))};
@@ -1158,10 +1185,26 @@ function viewDailyPhotos(row){
 }
 
 // printable daily sheet: same layout as the paper form, units across, items down
-$("#dprint").onclick = ()=>{
+$("#dprint").onclick = async ()=>{
   const date=$("#dd").value||todayISO(), f=$("#dfm").value, F=DAILY_FORMS[f], list=dUnits(f);
   const recs=list.map(u=>latestDaily(u.id,date)), got=recs.filter(Boolean);
   if(!got.length && !confirm("ยังไม่มีผลตรวจของวันที่เลือก พิมพ์เป็นใบเปล่าไว้กรอกมือหรือไม่?")) return;
+  // signatures are not part of the normal data load; fetch this day's sheets with their signatures
+  let sigRows={};
+  if(got.length){
+    const btn=$("#dprint"); btn.disabled=true; btn.textContent="กำลังเตรียมใบพิมพ์…";
+    try{ (await server("getDailyDay", date)).forEach(r=>{ sigRows[r.row]=r; }); }
+    catch(err){ toast("โหลดลายเซ็นไม่ได้ จะพิมพ์โดยไม่มีลายเซ็น: "+(err?.message||"")); }
+    btn.disabled=false; btn.textContent="พิมพ์ใบตรวจประจำวัน";
+  }
+  const full=got.map(r=>sigRows[r.row]||r).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  const inspectors=[], seen=new Set();
+  full.forEach(r=>{ if(!seen.has(r.inspector)){ seen.add(r.inspector); inspectors.push(r); } });
+  const supRec=full.find(r=>r.sigSup) || full.find(r=>r.supervisor);
+  const signBox=(src,name,role,extra)=>`<div class="sg"><div class="si">${src?`<img src="${src}" alt="">`:""}</div>
+    <div>(${esc(name)||"......................................................"})</div>${extra?`<div>${esc(extra)}</div>`:""}<div>${thDate(date)}</div><div class="t">${role}</div></div>`;
+  const signs = inspectors.slice(0,3).map(r=>signBox(r.sigInsp, r.inspector, "ผู้ตรวจสอบ", r.position)).join("")
+    + signBox(supRec?.sigSup, supRec?.supervisor, "ผู้ควบคุมงาน", "");
   const times=got.map(r=>r.time).filter(Boolean).sort();
   const who=[...new Set(got.map(r=>r.inspector))].join(", ");
   const notes=[];
@@ -1169,7 +1212,7 @@ $("#dprint").onclick = ()=>{
     Object.entries(r.checks).forEach(([k,v])=>{ if(v!=="ok" && v!=="na") notes.push(`${u.tag} ${DLABEL[k]||k}: ${dcode(v)[3]}${v==="n"?` ${r.counts?.[k]??""} ชิ้น`:""}${r.notes?.[k]?` (${r.notes[k]})`:""}`); });
     if(r.remark) notes.push(`${u.tag}: ${r.remark}`);
     if(r.jobs?.length) notes.push(`${u.tag}: เปิดงานซ่อม ${r.jobs.join(", ")}`); });
-  while(notes.length<6) notes.push("");
+  while(notes.length<5) notes.push("");
   const wide=list.length>12, itemW=wide?50:95, colW=((283-8-itemW)/Math.max(1,list.length)).toFixed(2);
   const css=`@page{size:A4 landscape;margin:7mm}
   #printarea .dp{font-family:"IBM Plex Sans Thai",Tahoma,sans-serif;color:#111;font-size:${wide?7.2:9.5}pt;line-height:1.25}
@@ -1186,11 +1229,14 @@ $("#dprint").onclick = ()=>{
   #printarea .dt td.it{font-size:inherit;line-height:1.25}
   #printarea .dt td.b{color:#b3261e;font-weight:700}
   #printarea .nt{border:1px solid #444;border-top:0;padding:1mm 2mm}
-  #printarea .nt div{border-bottom:1px dotted #888;min-height:5.5mm}
+  #printarea .nt div{border-bottom:1px dotted #888;min-height:5mm}
   #printarea .ft{display:flex;justify-content:space-between;gap:8mm;margin-top:3mm;align-items:flex-start}
-  #printarea table.lg{border-collapse:collapse} #printarea .lg td{border:1px solid #444;padding:0.6mm 2mm;white-space:nowrap}
+  #printarea table.lg{border-collapse:collapse;width:auto;flex:0 0 auto} #printarea .lg td{border:1px solid #444;padding:0.6mm 2mm;white-space:nowrap}
   #printarea .lg td.s{text-align:center;font-weight:700;width:8mm}
-  #printarea .sg{border:1px solid #444;width:72mm;text-align:center} #printarea .sg div{padding:1.2mm} #printarea .sg .t{background:#d9d9d9;font-weight:700;border-top:1px solid #444;-webkit-print-color-adjust:exact;print-color-adjust:exact}`;
+  #printarea .sgs{flex:1 1 auto;display:flex;gap:2mm;justify-content:flex-end;flex-wrap:wrap}
+  #printarea .si{height:13mm;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px dotted #333;margin:0 3mm}
+  #printarea .si img{max-height:13mm;max-width:46mm}
+  #printarea .sg{border:1px solid #444;width:50mm;text-align:center;font-size:${wide?7.2:8.5}pt} #printarea .sg div{padding:0.8mm 1mm} #printarea .sg .t{background:#d9d9d9;font-weight:700;border-top:1px solid #444;-webkit-print-color-adjust:exact;print-color-adjust:exact}`;
   const html=`<div class="dp">
     <div class="hd">แบบฟอร์มตรวจสอบสภาพความพร้อมใช้งานประจำวัน<div>${F.sys} โครงการอาคารภูมิสิริมังคลานุสรณ์ โรงพยาบาลจุฬาลงกรณ์ สภากาชาดไทย</div></div>
     <div class="r3"><span>ประจำวันที่ <b>${thDate(date)}</b></span><span>เวลา <b>${times.length? esc(times[0])+(times.length>1&&times[times.length-1]!==times[0]?" – "+esc(times[times.length-1]):"")+" น." : "................"}</b></span><span>ชื่อพนักงานช่างตรวจ <b>${esc(who)||"...................................."}</b></span></div>
@@ -1205,7 +1251,7 @@ $("#dprint").onclick = ()=>{
         <tr><td class="s">✓</td><td>ปกติ</td><td class="s">5</td><td>กรณีชำรุดให้ใส่จำนวนชิ้นงาน</td></tr>
         <tr><td class="s">✗</td><td>ต้องเปลี่ยนอะไหล่หรือซ่อมแซม</td><td class="s">⊗</td><td>ดำเนินการแล้ว</td></tr>
         <tr><td class="s">O</td><td>บริการและปรับแต่ง</td><td class="s">—</td><td>รายการที่ไม่มี</td></tr></table>
-      <div class="sg"><div style="height:12mm"></div><div>(......................................................)</div><div>........../........../..........</div><div class="t">ผู้ควบคุมงาน</div></div>
+      <div class="sgs">${signs}</div>
     </div></div>`;
   $("#printarea").innerHTML = `<style>${css}</style>${html}`;
   setTimeout(()=>window.print(), 200);
