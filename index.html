@@ -2,6 +2,8 @@
 <html lang="th"><head>
 <base target="_top">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PM ลิฟต์ ภูมิสิริฯ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
@@ -187,6 +189,67 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
 .scanbox video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:#000;max-width:100%}
 .scanrow{display:flex;gap:8px;flex-wrap:wrap}
 .scanrow input{flex:1 1 140px;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+/* daily check sheet */
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--muted)}
+.legend b{font-family:var(--f-mono);color:var(--ink)}
+.ditem{display:grid;grid-template-columns:32px minmax(0,1fr);gap:6px 10px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.ditem:last-child{border-bottom:0}
+.ditem .no{font-family:var(--f-mono);color:var(--muted)}
+.ditem .q{font-size:.95rem;font-weight:500}
+.ditem .dcodes,.ditem .dx{grid-column:2/-1}
+.ditem.is-bad{background:var(--bad-bg);border-radius:8px}
+.dcodes{display:flex;flex-wrap:wrap;gap:4px}
+.dcodes label{position:relative}
+.dcodes input{position:absolute;opacity:0;inset:0}
+.dcodes span{display:flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.84rem;font-weight:600;min-height:40px;background:var(--panel);cursor:pointer}
+.dcodes span i{font-style:normal;font-family:var(--f-mono);font-size:1.05rem;min-width:1ch;text-align:center}
+.dcodes input:checked + span{color:#fff}
+.dcodes input:checked + span.c-ok{background:var(--ok);border-color:var(--ok)}
+.dcodes input:checked + span.c-x,.dcodes input:checked + span.c-n{background:var(--bad);border-color:var(--bad)}
+.dcodes input:checked + span.c-o{background:var(--warn);border-color:var(--warn)}
+.dcodes input:checked + span.c-done{background:var(--steel);border-color:var(--steel);color:var(--bg)}
+.dcodes input:checked + span.c-na{background:var(--muted);border-color:var(--muted)}
+.dcodes input:focus-visible + span{outline:2px solid var(--accent);outline-offset:1px}
+.dx{display:flex;gap:8px;flex-wrap:wrap}
+.dx input{flex:1 1 160px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.dx input[type=number]{flex:0 0 120px}
+.h3s{font-size:.95rem;margin:0 0 6px}
+/* job tracker */
+.jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:10px}
+.jcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;text-align:left;width:100%;color:var(--ink)}
+.jcard:hover{border-color:var(--steel)}
+.jtop{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.jid{font-family:var(--f-mono);font-weight:600;color:var(--steel);font-size:.88rem}
+.chip.jnew{background:var(--warn-bg);color:var(--warn)}
+.chip.jcat{margin-left:auto;background:var(--none-bg);color:var(--steel)}
+.chip.jage{background:var(--bad-bg);color:var(--bad)}
+.jcard h3{font-size:1.1rem;font-family:var(--f-mono)}
+.jissue{margin:0;font-weight:600;font-size:.92rem}
+.jmeta{font-size:.82rem;color:var(--muted);margin:0}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:8px 0 2px}
+.step{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.7rem;color:var(--muted);position:relative;text-align:center;line-height:1.2}
+.step::before{content:"";position:absolute;top:10px;right:50%;width:100%;height:3px;background:var(--line)}
+.step:first-child::before{display:none}
+.step.done::before,.step.cur::before{background:var(--ok)}
+.step i{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--panel);position:relative;display:grid;place-items:center;font-style:normal;font-size:.72rem;color:#fff;font-weight:700}
+.step.done i{background:var(--ok);border-color:var(--ok)}
+.step.cur i{background:var(--accent);border-color:var(--accent)}
+.step.cur{color:var(--ink);font-weight:700}
+.jfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.86rem;font-weight:700;color:var(--warn)}
+.jfoot.fin{color:var(--ok)}
+.tl{display:flex;flex-direction:column;gap:8px;border-left:2px solid var(--line);padding-left:12px;margin-left:4px}
+.tl div{font-size:.86rem}
+.tl small{color:var(--muted)}
+@media (max-width:640px){
+  header.top{padding-block:8px;gap:6px}
+  .brand{flex-wrap:nowrap;align-items:center}
+  .brand h1{font-size:1.02rem;min-width:0}
+  .brand-r small{display:none}
+  #scanbtn{white-space:nowrap}
+  nav.tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{flex:none}
+}
 #printarea{display:none}
 @media print{
   @page{size:A4;margin:8mm}
@@ -205,6 +268,8 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
   </div>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="units" aria-selected="true">ลิฟต์ทั้งหมด</button>
+    <button role="tab" data-tab="daily" aria-selected="false">ตรวจประจำวัน</button>
+    <button role="tab" data-tab="jobs" aria-selected="false">ติดตามงาน <span id="jbadge"></span></button>
     <button role="tab" data-tab="history" aria-selected="false">ประวัติ PM</button>
     <button role="tab" data-tab="qr" aria-selected="false">พิมพ์ QR Code</button>
   </nav>
@@ -224,6 +289,28 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
 
   <section id="v-unit" hidden></section>
 
+  <section id="v-daily" hidden>
+    <div class="filters" style="margin-top:14px">
+      <input type="date" id="dd" aria-label="ประจำวันที่" style="flex:0 1 180px">
+      <select id="dfm" aria-label="แบบฟอร์ม"><option value="L">ลิฟต์ (L1-L46)</option><option value="E">บันไดเลื่อน (ES1-ES6)</option><option value="D">Dumb Waiter (D1-D7)</option></select>
+      <button class="btn dark" id="dprint">พิมพ์ใบตรวจประจำวัน</button>
+    </div>
+    <div class="strip" id="dstrip" style="margin-top:4px"></div>
+    <div class="list" id="dlist"></div>
+  </section>
+
+  <section id="v-check" hidden></section>
+
+  <section id="v-jobs" hidden>
+    <div class="strip" id="jstrip"></div>
+    <div class="filters">
+      <input id="jq" type="search" placeholder="ค้นหา เลขงาน, L16, อาการ, ชื่อช่าง">
+      <select id="jst" aria-label="สถานะงาน"><option value="">งานที่ยังไม่เสร็จ</option><option value="0">แจ้งเข้ามาใหม่</option><option value="12">รอ STB / M</option><option value="1">รอวิศวกร STB</option><option value="2">รอ M</option><option value="3">กำลังดำเนินงาน</option><option value="4">เสร็จสิ้น</option><option value="all">ทั้งหมด</option></select>
+      <button class="btn primary" id="jnewbtn">+ แจ้งงานซ่อม</button>
+    </div>
+    <div class="jgrid" id="jlist"></div>
+  </section>
+
   <section id="v-history" hidden>
     <div class="filters" style="margin-top:14px">
       <input id="hq" type="search" placeholder="ค้นหาลิฟต์ / ช่าง">
@@ -237,7 +324,7 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
     <div class="sheet">
       <div>
         <h2 style="font-size:1.1rem">ป้าย QR Code สำหรับติดหน้าลิฟต์</h2>
-        <p class="muted" style="margin:4px 0 0">สแกนด้วยกล้องมือถือแล้วจะเปิดฟอร์ม PM ของลิฟต์ตัวนั้นทันที เลือกป้ายแล้วกด "พิมพ์ QR Code" หน้าต่างพิมพ์จะขึ้นทันที ตั้งกระดาษ A4 สเกล 100%</p>
+        <p class="muted" style="margin:4px 0 0">สแกนด้วยกล้องมือถือแล้วจะเปิดใบตรวจประจำวันของลิฟต์ตัวนั้นทันที (มีปุ่มไปบันทึก PM ต่อได้) เลือกป้ายแล้วกด "พิมพ์ QR Code" หน้าต่างพิมพ์จะขึ้นทันที ตั้งกระดาษ A4 สเกล 100%</p>
       </div>
       <div class="qrtools">
         <select id="qb" aria-label="กลุ่มลิฟต์"><option value="">ทุกกลุ่มลิฟต์</option></select>
@@ -271,7 +358,7 @@ function server(fn, arg){
     arg===undefined ? r[fn]() : r[fn](arg);
   });
   if(!HAS_API) return Promise.reject(new Error("NO_SERVER"));
-  const req = fn==="savePM"
+  const req = /^(save|create|update)/.test(fn)
     ? fetch(API_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({action:fn, arg})})
     : fetch(API_URL+"?api="+fn+(arg!=null? "&arg="+encodeURIComponent(arg) : ""));
   return req.then(r=>r.json(), ()=>{ throw new Error("ติดต่อ Apps Script ไม่ได้ ตรวจว่า Deploy ตั้ง Who has access เป็น Anyone และลิงก์ /exec ถูกต้อง"); })
@@ -373,17 +460,22 @@ function renderList(){
   $("#list").innerHTML = rows.length ? html : `<div class="empty">${dbReady? "ไม่พบลิฟต์ที่ตรงกับเงื่อนไข" : "กำลังโหลดรายชื่อลิฟต์จาก Google Sheet…"}</div>`;
 }
 function unitRow(u){
-    const s=statusOf(u.id);
+    const s=statusOf(u.id), d=latestDaily(u.id, todayISO()), oj=jobs.filter(j=>j.assetId===u.id && j.stage<4).length;
     return `<div class="row">
       <div class="tag">${esc(u.tag)}</div>
       <div class="meta"><h3>${esc(u.name)}</h3>
         <p>${esc(u.group)} · อาคาร${esc(u.bld)} · <span class="mono">${esc(u.id)}</span></p>
-        <p>PM ล่าสุด ${s.last? thDate(s.last.date):"-"}${s.due? " · ครบกำหนดถัดไป "+thDate(s.due):""}</p></div>
-      <div class="act"><span class="chip ${s.k}">${s.t}</span>
+        <p>PM ล่าสุด ${s.last? thDate(s.last.date):"-"}${s.due? " · ครบกำหนดถัดไป "+thDate(s.due):""} · ตรวจวันนี้: ${d? (d.ngCount? `<b class="lateN">ผิดปกติ ${d.ngCount} ข้อ</b>` : "ปกติ") : "ยังไม่ตรวจ"}</p></div>
+      <div class="act"><span class="chip ${s.k}">${s.t}</span>${oj? `<span class="chip bad">งานซ่อมค้าง ${oj}</span>`:""}
         <button class="btn" data-open="${u.id}">ประวัติ</button>
-        <button class="btn primary" data-pm="${u.id}">บันทึก PM</button></div></div>`;
+        <button class="btn ${d?"":"primary"}" data-daily="${u.id}">ตรวจประจำวัน</button>
+        <button class="btn dark" data-pm="${u.id}">บันทึก PM</button></div></div>`;
 }
 document.addEventListener("click", e=>{
+  const jb=e.target.closest("[data-job]"); if(jb){ e.preventDefault(); openJob(jb.dataset.job); return; }
+  const dc=e.target.closest("[data-daily]"); if(dc){ showCheck(dc.dataset.daily); return; }
+  const dp=e.target.closest("[data-dphotos]"); if(dp){ viewDailyPhotos(dp.dataset.dphotos); return; }
+  const nj=e.target.closest("[data-newjob]"); if(nj){ newJob(nj.dataset.newjob); return; }
   const o=e.target.closest("[data-open]"); if(o){ e.preventDefault(); showUnit(o.dataset.open, false); return; }
   const p=e.target.closest("[data-pm]"); if(p){ showUnit(p.dataset.pm, true); return; }
   const rp=e.target.closest("[data-report]"); if(rp){ printReport(rp.dataset.report); return; }
@@ -399,6 +491,8 @@ function showUnit(id, withForm){
 function renderUnit(){
   const u=BY_ID[openUnit], s=statusOf(u.id);
   const hist = records.filter(r=>r.assetId===u.id).sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||"").localeCompare(a.createdAt||""));
+  const uJobs = jobs.filter(j=>j.assetId===u.id).sort((a,b)=>(a.stage===4)-(b.stage===4) || b.id.localeCompare(a.id)).slice(0,8);
+  const uDaily = daily.filter(d=>d.assetId===u.id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
   const v=$("#v-unit");
   v.innerHTML = `<div class="sheet">
     <div class="sheet-head">
@@ -417,7 +511,12 @@ function renderUnit(){
       <dt>ครบกำหนดถัดไป</dt><dd>${s.due? thDate(s.due):"ทำ PM ครั้งแรกได้เลย"}</dd>
     </dl>
     <div id="formslot"></div>
-    ${formUnit? "" : `<div><button class="btn primary" id="startpm">บันทึก PM ลิฟต์ตัวนี้</button></div>`}
+    ${formUnit? "" : `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-daily="${u.id}">ตรวจประจำวัน</button>
+      <button class="btn dark" id="startpm">บันทึก PM ลิฟต์ตัวนี้</button><button class="btn" data-newjob="${u.id}">แจ้งซ่อม</button></div>
+      ${uJobs.length? `<div><h3 style="font-size:1rem;margin-bottom:8px">งานซ่อม (${uJobs.length})</h3><div class="jgrid">${uJobs.map(jobCard).join("")}</div></div>`:""}
+      <div><h3 style="font-size:1rem;margin-bottom:8px">ใบตรวจประจำวันล่าสุด (${uDaily.length})</h3><div class="hist">${uDaily.length? uDaily.slice(0,10).map(r=>`<div class="h"><span class="mono">${thDate(r.date)} ${esc(r.time)}</span>
+        <div style="min-width:0"><b>${esc(r.inspector)}</b><p>${r.ngCount? "ผิดปกติ: "+esc(dBadText(r)) : "ปกติทุกข้อ"}${r.remark? " · "+esc(r.remark):""}</p></div>
+        <span class="d" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${dailyChip(r)}${r.beforeN||r.afterN? `<button class="btn" data-dphotos="${r.row}">รูป (${r.beforeN+r.afterN})</button>`:""}</span></div>`).join("") : `<div class="empty">ยังไม่มีใบตรวจประจำวัน</div>`}</div></div>`}
     <div><h3 style="font-size:1rem;margin-bottom:8px">ประวัติ PM (${hist.length})</h3>
       <div class="hist">${hist.length? hist.map(r=>histRow(r)).join("") : `<div class="empty">ยังไม่มีประวัติ PM ของลิฟต์ตัวนี้</div>`}</div></div>
   </div>`;
@@ -795,7 +894,7 @@ function labelsParts(list, per, S=""){
   // 40-up: QR on the left, text on the right, so the cell stays short enough for 10 rows
   const cell = u=> L.row
     ? `<div class="lb row"><div class="qr">${qrSvg(qrPayload(u))}</div><div class="tx"><div class="tg">${esc(u.tag)}</div><div class="nm">${esc(u.type)} · ${esc(u.group)}</div><div class="id">${esc(u.id)}</div></div></div>`
-    : `<div class="lb">${L.small?"":`<div class="hd">PM ลิฟต์ · สแกนเพื่อบันทึก</div>`}<div class="tg">${esc(u.tag)}</div>
+    : `<div class="lb">${L.small?"":`<div class="hd">สแกนเพื่อตรวจเช็ค / PM</div>`}<div class="tg">${esc(u.tag)}</div>
     <div class="qr">${qrSvg(qrPayload(u))}</div><div class="nm">${L.small? esc(u.type)+" · "+esc(u.group) : esc(u.name)+"<br>"+esc(u.group)+" · อาคาร"+esc(u.bld)}</div><div class="id">${esc(u.id)}</div></div>`;
   const css = `${S}.pg{display:grid;grid-template-columns:repeat(${L.c},1fr);grid-template-rows:repeat(${L.r},1fr);gap:${gap}mm;height:275mm;page-break-after:always;break-after:page;font-family:"IBM Plex Sans Thai",Tahoma,sans-serif;color:#111}
 ${S}.pg:last-child{page-break-after:auto;break-after:auto}
@@ -821,20 +920,396 @@ ${p.body}
 <script>window.addEventListener("load",()=>setTimeout(()=>window.print(),700))<\/script></body></html>`;
 }
 
+// ---------- daily check sheet (แบบฟอร์มตรวจสอบสภาพความพร้อมใช้งานประจำวัน) ----------
+const DAILY_FORMS = {
+  L: {name:"ลิฟต์", sys:"ระบบลิฟต์ ยี่ห้อฮิตาชิ (HITACHI)", unit:"หมายเลขลิฟต์", items:[
+    ["dl1","Photo cell (เซ็นเซอร์ประตูลิฟต์)"],["dl2","Safety shoe / ORS (เซฟตี้ประตูลิฟต์)"],["dl3","แสงสว่าง"],["dl4","พัดลมระบายอากาศ"],
+    ["dl5","ไฟบอกชั้นหน้าชั้น (Hall Ind.)"],["dl6","ออกตัว / เข้าจอด"],["dl7","ระดับชั้น"],["dl8","ไฟบอกชั้นในตู้ (CPI)"],
+    ["dl9","ปุ่มกดด้านในตู้ลิฟต์"],["dl10","ปุ่มกดด้านหน้าชั้น"]]},
+  E: {name:"บันไดเลื่อน", sys:"ระบบบันไดเลื่อน ยี่ห้อฮิตาชิ (HITACHI)", unit:"หมายเลขบันไดเลื่อน", items:[
+    ["de1","ไฟบอกทิศทาง"],["de2","AUTO START - STOP (บันไดเลื่อนทำงาน-หยุด อัตโนมัติ)"],["de3","เสียงผิดปกติ"],["de4","สภาพหวี"],
+    ["de5","สภาพ Demarcation (แถบเหลืองบนลูกขั้น)"],["de6","สกรู Cover ต่างๆ (สกรูยึดเพลทปิดต่างๆ)"]]},
+  D: {name:"Dumb Waiter", sys:"ระบบ Dumb Waiter", unit:"หมายเลข Dumb Waiter", items:[
+    ["dd1","ไฟบอกทิศทาง"],["dd2","ระดับชั้นการจอด"],["dd3","เสียงผิดปกติ"],["dd4","ปุ่มกดหน้าลิฟต์"],["dd5","Intercom (โทรศัพท์)"],["dd6","ประตูลิฟต์"]]}
+};
+// [code, symbol on the paper form, button text, meaning]
+const DCODES = [["ok","✓","ปกติ","ปกติ"],["x","✗","ซ่อม/เปลี่ยน","ต้องเปลี่ยนอะไหล่หรือซ่อมแซม"],["o","O","ปรับแต่ง","บริการและปรับแต่ง"],
+  ["n","#","ชำรุด","กรณีชำรุดให้ใส่จำนวนชิ้นงาน"],["done","⊗","แก้แล้ว","ดำเนินการแล้ว"],["na","—","ไม่มี","รายการที่ไม่มี"]];
+const DLABEL = Object.fromEntries(Object.values(DAILY_FORMS).flatMap(f=>f.items));
+const MAX_SIDE = 4;
+let daily = [], jobs = [], checkUnit = null;
+function formOf(u){
+  if(!u) return "L";
+  if(u.kind==="E" || /^ES/i.test(u.tag)) return "E";
+  if(/^D\d/i.test(u.tag) || /ขนของ|dumb/i.test((u.type||"")+(u.name||""))) return "D";
+  return "L";
+}
+const dcode = v => DCODES.find(c=>c[0]===v) || ["","","",""];
+function dsym(r,k){ const v=r?.checks?.[k]; if(!v) return ""; return v==="n" ? String(r.counts?.[k] ?? "#") : dcode(v)[1]; }
+function latestDaily(id, date){ let b=null; for(const d of daily) if(d.assetId===id && d.date===date && (!b || d.createdAt>b.createdAt)) b=d; return b; }
+function dBadText(r){ return Object.entries(r.checks||{}).filter(([,v])=>v==="x"||v==="n").map(([k,v])=>(DLABEL[k]||k)+(v==="n"?` ชำรุด ${r.counts?.[k]??"?"} ชิ้น`:"")).join(", "); }
+function dUnits(f){ return UNITS.filter(u=>formOf(u)===f); }
+function dailyChip(r){ return !r? `<span class="chip none">ยังไม่ตรวจ</span>` : r.ngCount? `<span class="chip bad">ผิดปกติ ${r.ngCount} ข้อ</span>` : `<span class="chip ok">ปกติ</span>`; }
+
+function renderDaily(){
+  if(!$("#dd").value) $("#dd").value = todayISO();
+  const date=$("#dd").value, f=$("#dfm").value, list=dUnits(f);
+  let done=0, bad=0;
+  const rows = list.map(u=>{
+    const r=latestDaily(u.id,date); if(r){ done++; if(r.ngCount) bad++; }
+    return `<div class="row"><div class="tag">${esc(u.tag)}</div>
+      <div class="meta"><h3>${esc(u.name)}</h3><p>${r? `ตรวจเวลา ${esc(r.time)} น. โดย ${esc(r.inspector)}${r.ngCount? " · "+esc(dBadText(r)) : ""}` : esc(u.group)}</p></div>
+      <div class="act">${dailyChip(r)}${r && (r.beforeN||r.afterN)? `<button class="btn" data-dphotos="${r.row}">รูป (${r.beforeN+r.afterN})</button>`:""}
+        <button class="btn ${r?"":"primary"}" data-daily="${u.id}">${r?"ตรวจซ้ำ":"ตรวจเช็ค"}</button></div></div>`;
+  }).join("");
+  const openJobs = jobs.filter(j=>j.stage<4 && formOf(BY_ID[j.assetId])===f).length;
+  $("#dstrip").innerHTML = `<div class="stat"><b>${done}/${list.length}</b><span>ตรวจแล้ว ${thDate(date)}</span></div>
+    <div class="stat ok"><b>${done-bad}</b><span>ปกติ</span></div>
+    <div class="stat bad"><b>${bad}</b><span>พบผิดปกติ</span></div>
+    <button class="stat warn" id="dgojobs"><b>${openJobs}</b><span>งานซ่อม${DAILY_FORMS[f].name}ที่ค้างอยู่</span></button>`;
+  $("#dgojobs").onclick = ()=>setTab("jobs");
+  $("#dlist").innerHTML = rows || `<div class="empty">${dbReady? "ไม่มีอุปกรณ์ในหมวดนี้" : "กำลังโหลด…"}</div>`;
+}
+["#dd","#dfm"].forEach(s=>$(s).addEventListener("change", renderDaily));
+
+// photo picker used by the daily form and the job tracker (before / after)
+function phBoxHTML(key, hint){
+  return `<div data-phbox="${key}" style="display:flex;flex-direction:column;gap:8px">
+    <div class="phbtns"><label class="btn dark">ถ่ายรูป<input type="file" accept="image/&#42;" capture="environment" hidden></label>
+      <label class="btn">เลือกจากคลังภาพ<input type="file" accept="image/&#42;" multiple hidden></label>
+      <span class="muted phn" style="font-size:.82rem"></span>${hint? `<span class="muted" style="font-size:.82rem">${hint}</span>`:""}</div>
+    <div class="phgrid"></div></div>`;
+}
+function photoBox(root, key, max){
+  root._ph = root._ph || {}; root._ph[key] = [];
+  const box = root.querySelector(`[data-phbox="${key}"]`), list = root._ph[key];
+  const draw = ()=>{
+    box.querySelector(".phn").textContent = `${list.length}/${max} รูป`;
+    box.querySelector(".phgrid").innerHTML = list.map((p,i)=>`<div class="ph"><img src="${p.data}" alt="รูปที่ ${i+1}">
+      <input data-cap="${i}" value="${esc(p.cap)}" placeholder="คำอธิบายรูป" maxlength="100">
+      <button type="button" class="btn" data-del="${i}" aria-label="ลบรูปที่ ${i+1}">ลบ</button></div>`).join("");
+  };
+  box.querySelectorAll('input[type="file"]').forEach(inp=>inp.addEventListener("change", async e=>{
+    for(const f of [...e.target.files]){
+      if(list.length>=max){ toast(`แนบได้สูงสุด ${max} รูป`); break; }
+      try{ list.push({data: await shrinkImage(f), cap:""}); draw(); }catch{ toast("เปิดรูปนี้ไม่ได้ ลองถ่ายใหม่ หรือเลือกรูป .jpg/.png"); }
+    }
+    e.target.value="";
+  }));
+  box.querySelector(".phgrid").addEventListener("input", e=>{ const i=e.target.dataset.cap; if(i!=null) list[i].cap=e.target.value; });
+  box.querySelector(".phgrid").addEventListener("click", e=>{ const i=e.target.dataset.del; if(i!=null){ list.splice(+i,1); draw(); } });
+  draw();
+}
+const photosOut = (root,key)=>(root._ph?.[key]||[]).map(p=>({data:p.data.split(",")[1], cap:p.cap.trim()}));
+
+function showCheck(id){ if(!BY_ID[id]) return; checkUnit=id; formUnit=null; setTab("check"); renderCheck(); window.scrollTo({top:0}); }
+function renderCheck(){
+  const u=BY_ID[checkUnit], f=formOf(u), F=DAILY_FORMS[f], today=todayISO(), prev=latestDaily(u.id,today);
+  const openJ = jobs.filter(j=>j.assetId===u.id && j.stage<4);
+  const v=$("#v-check");
+  v.innerHTML = `<div class="sheet">
+    <div class="sheet-head">
+      <div style="display:flex;gap:14px;align-items:center;min-width:0"><div class="tag">${esc(u.tag)}</div>
+        <div style="min-width:0"><h2 style="font-size:1.15rem">${esc(u.name)}</h2><span class="muted" style="font-size:.85rem">${esc(u.group)}</span></div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" id="c-back">← กลับ</button><button class="btn" data-pm="${u.id}">บันทึก PM แทน</button><button class="btn" data-newjob="${u.id}">แจ้งซ่อม</button></div>
+    </div>
+    ${prev? `<div class="notice ok">วันนี้ตรวจแล้วเวลา ${esc(prev.time)} น. โดย ${esc(prev.inspector)} · ตรวจซ้ำได้ ใบตรวจประจำวันจะใช้ผลล่าสุด</div>`:""}
+    ${openJ.length? `<div class="notice bad">มีงานซ่อมค้างอยู่ ${openJ.length} งาน: ${openJ.map(j=>`<a href="#" data-job="${esc(j.id)}" style="color:inherit;font-weight:700">${esc(j.id)}</a> ${esc(j.title)} (${esc(j.status)})`).join(" · ")}</div>`:""}
+    <form class="doc" id="dcform" novalidate>
+      <div class="doc-head"><div><h2>แบบฟอร์มตรวจสอบสภาพความพร้อมใช้งานประจำวัน</h2>
+        <p>${F.sys} · อาคารภูมิสิริมังคลานุสรณ์ โรงพยาบาลจุฬาลงกรณ์ สภากาชาดไทย</p></div>
+        <div class="no">${F.unit}<br><b style="font-size:1.3rem">${esc(u.tag)}</b></div></div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">1</span><h3>ข้อมูลการตรวจ</h3></div>
+        <div class="grid2">
+          <label class="field">ประจำวันที่<input type="date" id="d-date" value="${today}"></label>
+          <label class="field">เวลา<input type="time" id="d-time" value="${nowHM()}"></label>
+          <label class="field">ชื่อเจ้าหน้าที่ช่างตรวจ *<input id="d-who" autocomplete="name" placeholder="ชื่อ-นามสกุล" value="${esc(store.get("pm.tech")||"")}"></label>
+        </div></div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">2</span><h3>รูปหน้างาน ก่อนทำ</h3></div>${phBoxHTML("before", "ถ่ายสภาพก่อนตรวจ / ก่อนแก้ไข")}</div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">3</span><h3>รายการที่ตรวจเช็ค (${F.items.length} ข้อ)</h3><button type="button" class="btn" id="d-allok">✓ ปกติทุกข้อ</button></div>
+        <div class="legend">${DCODES.map(c=>`<span><b>${c[1]}</b> ${c[3]}</span>`).join("")}</div>
+        <div>${F.items.map(([k,t],i)=>`<div class="ditem" data-k="${k}"><span class="no">${i+1}</span><span class="q">${esc(t)}</span>
+          <div class="dcodes" role="radiogroup" aria-label="${esc(t)}">${DCODES.map(c=>`<label><input type="radio" name="d-${k}" value="${c[0]}"><span class="c-${c[0]}"><i>${c[1]}</i>${c[2]}</span></label>`).join("")}</div>
+          <div class="dx" hidden><input type="number" min="1" step="1" inputmode="numeric" id="dn-${k}" placeholder="จำนวนชิ้น" hidden><input id="dt-${k}" placeholder="รายละเอียด"></div></div>`).join("")}</div></div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">4</span><h3>รูปหน้างาน หลังทำ</h3></div>${phBoxHTML("after", "ถ่ายหลังตรวจ / หลังแก้ไข")}</div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">5</span><h3>รายการตรวจสอบและแก้ไขเพิ่มเติม</h3></div>
+        <label class="field">หมายเหตุ<textarea id="d-rem" rows="3" placeholder="เช่น ไฟในตู้ดับ 1 ดวง แจ้งหัวหน้าช่างแล้ว"></textarea></label></div>
+      <div id="d-msg" style="padding:0 16px"></div>
+      <div class="formbar"><div class="prog"><span id="d-prog">ตรวจแล้ว 0/${F.items.length} ข้อ</span><i><b id="d-bar"></b></i></div>
+        <div style="display:flex;gap:8px"><button class="btn" type="button" id="d-cancel">ยกเลิก</button><button class="btn primary" type="submit" id="d-save">บันทึกใบตรวจ</button></div></div>
+    </form></div>`;
+  const form=v.querySelector("#dcform"), total=F.items.length;
+  photoBox(form,"before",MAX_SIDE); photoBox(form,"after",MAX_SIDE);
+  const update = ()=>{
+    const done=form.querySelectorAll(".dcodes input:checked").length;
+    const bad=form.querySelectorAll('.dcodes input[value="x"]:checked, .dcodes input[value="n"]:checked').length;
+    form.querySelector("#d-prog").textContent = `ตรวจแล้ว ${done}/${total} ข้อ${bad? ` · ผิดปกติ ${bad} ข้อ (ส่งเข้าระบบติดตามงานอัตโนมัติ)`:""}`;
+    const b=form.querySelector("#d-bar"); b.style.width=(done/total*100)+"%"; b.style.background = bad? "var(--bad)" : "var(--ok)";
+  };
+  form.addEventListener("change", e=>{
+    const n=e.target.name; if(!n || !n.startsWith("d-")) return;
+    const k=n.slice(2), val=e.target.value, it=form.querySelector(`.ditem[data-k="${k}"]`), isBad = val==="x"||val==="n";
+    it.classList.toggle("is-bad", isBad);
+    it.querySelector(".dx").hidden = !(isBad || val==="o" || val==="done");
+    it.querySelector("#dn-"+k).hidden = val!=="n";
+    it.querySelector("#dt-"+k).placeholder = isBad? "อาการ / รายละเอียด (จะเปิดงานซ่อมให้อัตโนมัติ)" : "สิ่งที่ทำ / รายละเอียด";
+    if(val==="n") it.querySelector("#dn-"+k).focus();
+    update();
+  });
+  form.querySelector("#d-allok").onclick = ()=>{ form.querySelectorAll('.dcodes input[value="ok"]').forEach(i=>{ if(!form.querySelector(`input[name="${i.name}"]:checked`)) i.checked=true; }); update(); };
+  form.querySelector("#d-cancel").onclick = v.querySelector("#c-back").onclick = ()=>{ checkUnit=null; setTab("daily"); };
+  form.addEventListener("submit", e=>{ e.preventDefault(); saveDaily(form, u, F, f); });
+}
+
+function saveDaily(form, u, F, f){
+  const msg=form.querySelector("#d-msg"), val=s=>form.querySelector(s)?.value?.trim() ?? "";
+  const fail=(t,el)=>{ msg.innerHTML=`<div class="notice bad" style="margin-top:12px">${t}</div>`; (el||msg).scrollIntoView({behavior:"smooth",block:"center"}); };
+  const checks={}, counts={}, notes={}, labels={}, missing=[];
+  F.items.forEach(([k,t],i)=>{
+    const v=form.querySelector(`input[name="d-${k}"]:checked`)?.value; labels[k]=t;
+    if(!v){ missing.push(i+1); return; }
+    checks[k]=v;
+    const note=val("#dt-"+k); if(note && v!=="ok" && v!=="na") notes[k]=note;
+    if(v==="n") counts[k]=Math.max(0, Math.round(Number(val("#dn-"+k))||0));
+  });
+  if(missing.length) return fail(`ยังไม่ได้เลือกผลตรวจข้อ ${missing.join(", ")}`, form.querySelector(`.ditem[data-k="${F.items[missing[0]-1][0]}"]`));
+  const noCount=Object.keys(counts).filter(k=>!counts[k]);
+  if(noCount.length) return fail(`กรุณาใส่จำนวนชิ้นที่ชำรุด (ข้อ ${noCount.map(k=>F.items.findIndex(x=>x[0]===k)+1).join(", ")})`, form.querySelector("#dn-"+noCount[0]));
+  const who=val("#d-who"); if(!who) return fail("กรุณาใส่ชื่อเจ้าหน้าที่ช่างตรวจ (หัวข้อ 1)", form.querySelector("#d-who"));
+  const date=val("#d-date"); if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail("กรุณาเลือกวันที่ตรวจ", form.querySelector("#d-date"));
+  store.set("pm.tech", who);
+  const rec={assetId:u.id, tag:u.tag, form:f, date, time:val("#d-time")||nowHM(), inspector:who, checks, counts, notes, labels,
+    remark:val("#d-rem"), before:photosOut(form,"before"), after:photosOut(form,"after")};
+  const nBad=Object.values(checks).filter(v=>v==="x"||v==="n").length, nPh=rec.before.length+rec.after.length;
+  const btn=form.querySelector("#d-save"); btn.disabled=true;
+  btn.textContent = nPh? `กำลังบันทึกและอัปโหลดรูป ${nPh} รูป…` : "กำลังบันทึก…";
+  server("saveDaily", rec)
+    .then(data=>{ applyData(data); checkUnit=null; $("#dd").value=date; $("#dfm").value=f; setTab("daily"); window.scrollTo({top:0});
+      toast(`บันทึกใบตรวจ ${u.tag} แล้ว${nBad? ` · ส่งงานซ่อม ${nBad} รายการเข้าระบบติดตามงาน`:""}`); })
+    .catch(err=>{ btn.disabled=false; btn.textContent="บันทึกใบตรวจ"; fail(`ยังไม่ได้บันทึก: ${esc(err?.message||"เชื่อมต่อไม่สำเร็จ")} ลองกดบันทึกอีกครั้ง`); });
+}
+
+function photoOverlay(title, promise){
+  const ov=document.createElement("div"); ov.className="overlay";
+  ov.innerHTML=`<div class="scanbox" style="width:min(900px,100%)" role="dialog" aria-label="${esc(title)}">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="font-size:1.05rem" class="pt">${esc(title)}</h2><button class="btn" data-x>ปิด</button></div>
+    <div class="pb"><p class="muted">กำลังโหลดรูปจาก Google Drive…</p></div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove(); ov.querySelector("[data-x]").onclick=close; ov.addEventListener("click",e=>{ if(e.target===ov) close(); });
+  promise.then(d=>{ ov.querySelector(".pt").textContent=d.title; ov.querySelector(".pb").innerHTML=d.groups.map(([g,list])=>galleryHTML(g,list)).join(""); })
+    .catch(err=>{ ov.querySelector(".pb").innerHTML=`<p class="notice bad">โหลดรูปไม่ได้: ${esc(err?.message||"")}</p>`; });
+}
+function galleryHTML(title, list){
+  list=list||[];
+  return `<h3 class="h3s" style="margin-top:8px">${title} (${list.length})</h3>` + (list.length
+    ? `<div class="gallery">${list.map((p,i)=>`<figure>${p.src?`<img src="${p.src}" alt="${esc(title)} ${i+1}">`:""}<figcaption>${i+1}. ${esc(p.cap||"")}</figcaption></figure>`).join("")}</div>`
+    : `<p class="muted" style="margin:0">ไม่มีรูป</p>`);
+}
+function viewDailyPhotos(row){
+  photoOverlay("รูปหน้างาน", server("getDaily", row).then(r=>({title:`รูปหน้างาน · ${r.tag} · ${thDate(r.date)} ${r.time} น.`, groups:[["ก่อนทำ",r.before],["หลังทำ",r.after]]})));
+}
+
+// printable daily sheet: same layout as the paper form, units across, items down
+$("#dprint").onclick = ()=>{
+  const date=$("#dd").value||todayISO(), f=$("#dfm").value, F=DAILY_FORMS[f], list=dUnits(f);
+  const recs=list.map(u=>latestDaily(u.id,date)), got=recs.filter(Boolean);
+  if(!got.length && !confirm("ยังไม่มีผลตรวจของวันที่เลือก พิมพ์เป็นใบเปล่าไว้กรอกมือหรือไม่?")) return;
+  const times=got.map(r=>r.time).filter(Boolean).sort();
+  const who=[...new Set(got.map(r=>r.inspector))].join(", ");
+  const notes=[];
+  got.forEach(r=>{ const u=BY_ID[r.assetId];
+    Object.entries(r.checks).forEach(([k,v])=>{ if(v!=="ok" && v!=="na") notes.push(`${u.tag} ${DLABEL[k]||k}: ${dcode(v)[3]}${v==="n"?` ${r.counts?.[k]??""} ชิ้น`:""}${r.notes?.[k]?` (${r.notes[k]})`:""}`); });
+    if(r.remark) notes.push(`${u.tag}: ${r.remark}`);
+    if(r.jobs?.length) notes.push(`${u.tag}: เปิดงานซ่อม ${r.jobs.join(", ")}`); });
+  while(notes.length<6) notes.push("");
+  const wide=list.length>12, itemW=wide?50:95, colW=((283-8-itemW)/Math.max(1,list.length)).toFixed(2);
+  const css=`@page{size:A4 landscape;margin:7mm}
+  #printarea .dp{font-family:"IBM Plex Sans Thai",Tahoma,sans-serif;color:#111;font-size:${wide?7.2:9.5}pt;line-height:1.25}
+  #printarea .hd{background:#d9d9d9;text-align:center;font-weight:700;padding:1.2mm;border:1px solid #444;border-bottom:0;font-size:1.1em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printarea .hd div{font-weight:600;font-size:.9em}
+  #printarea .r3{display:flex;justify-content:space-between;gap:6mm;padding:1.2mm 2mm;border:1px solid #444;border-bottom:0}
+  #printarea table.dt{width:100%;border-collapse:collapse;table-layout:fixed}
+  #printarea .dt th,#printarea .dt td{border:1px solid #444;padding:${wide?"1.9mm 0":"2.6mm 1mm"};text-align:center;white-space:nowrap;overflow:hidden}
+  #printarea .dt .it{text-align:left;padding-left:1.5mm;white-space:normal}
+  #printarea table{font-size:inherit;color:#111}
+  #printarea .dt th{background:#e6e6e6;color:#111;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printarea .dt th.u{font-size:${wide?5.4:9}pt;letter-spacing:-0.02em;padding:${wide?"0.8mm 0":"1.4mm 1mm"}}
+  #printarea .dt td{font-size:${wide?8:11}pt;line-height:1.1}
+  #printarea .dt td.it{font-size:inherit;line-height:1.25}
+  #printarea .dt td.b{color:#b3261e;font-weight:700}
+  #printarea .nt{border:1px solid #444;border-top:0;padding:1mm 2mm}
+  #printarea .nt div{border-bottom:1px dotted #888;min-height:5.5mm}
+  #printarea .ft{display:flex;justify-content:space-between;gap:8mm;margin-top:3mm;align-items:flex-start}
+  #printarea table.lg{border-collapse:collapse} #printarea .lg td{border:1px solid #444;padding:0.6mm 2mm;white-space:nowrap}
+  #printarea .lg td.s{text-align:center;font-weight:700;width:8mm}
+  #printarea .sg{border:1px solid #444;width:72mm;text-align:center} #printarea .sg div{padding:1.2mm} #printarea .sg .t{background:#d9d9d9;font-weight:700;border-top:1px solid #444;-webkit-print-color-adjust:exact;print-color-adjust:exact}`;
+  const html=`<div class="dp">
+    <div class="hd">แบบฟอร์มตรวจสอบสภาพความพร้อมใช้งานประจำวัน<div>${F.sys} โครงการอาคารภูมิสิริมังคลานุสรณ์ โรงพยาบาลจุฬาลงกรณ์ สภากาชาดไทย</div></div>
+    <div class="r3"><span>ประจำวันที่ <b>${thDate(date)}</b></span><span>เวลา <b>${times.length? esc(times[0])+(times.length>1&&times[times.length-1]!==times[0]?" – "+esc(times[times.length-1]):"")+" น." : "................"}</b></span><span>ชื่อพนักงานช่างตรวจ <b>${esc(who)||"...................................."}</b></span></div>
+    <table class="dt"><colgroup><col style="width:8mm"><col style="width:${itemW}mm">${list.map(()=>`<col style="width:${colW}mm">`).join("")}</colgroup>
+      <thead><tr><th rowspan="2">ลำดับ</th><th class="it">${F.unit}</th>${list.map(u=>`<th class="u">${esc(u.tag)}</th>`).join("")}</tr>
+        <tr><th class="it">รายการที่ตรวจเช็ค</th>${list.map(()=>"<th></th>").join("")}</tr></thead>
+      <tbody>${F.items.map(([k,t],i)=>`<tr><td>${i+1}</td><td class="it">${esc(t)}</td>${recs.map(r=>{ const v=r?.checks?.[k]; return `<td class="${v==="x"||v==="n"?"b":""}">${esc(dsym(r,k))}</td>`; }).join("")}</tr>`).join("")}
+        <tr><td>&nbsp;</td><td></td>${list.map(()=>"<td></td>").join("")}</tr></tbody></table>
+    <div class="nt"><b>รายการตรวจสอบและแก้ไขเพิ่มเติม :</b>${notes.map(n=>`<div>${esc(n)}</div>`).join("")}</div>
+    <div class="ft">
+      <table class="lg"><tr><td colspan="4"><b>เครื่องหมายในการทำงาน</b></td></tr>
+        <tr><td class="s">✓</td><td>ปกติ</td><td class="s">5</td><td>กรณีชำรุดให้ใส่จำนวนชิ้นงาน</td></tr>
+        <tr><td class="s">✗</td><td>ต้องเปลี่ยนอะไหล่หรือซ่อมแซม</td><td class="s">⊗</td><td>ดำเนินการแล้ว</td></tr>
+        <tr><td class="s">O</td><td>บริการและปรับแต่ง</td><td class="s">—</td><td>รายการที่ไม่มี</td></tr></table>
+      <div class="sg"><div style="height:12mm"></div><div>(......................................................)</div><div>........../........../..........</div><div class="t">ผู้ควบคุมงาน</div></div>
+    </div></div>`;
+  $("#printarea").innerHTML = `<style>${css}</style>${html}`;
+  setTimeout(()=>window.print(), 200);
+};
+
+// ---------- job tracker (ระบบติดตามงานซ่อม: ตั้งเรื่อง → วิศวกร STB → M → ดำเนินงาน → เสร็จสิ้น) ----------
+const JOB_STAGES = ["ตั้งเรื่อง","วิศวกร STB","M","ดำเนินงาน","เสร็จสิ้น"];
+const JOB_STATUS = ["รอหัวหน้าช่างรับเรื่อง","รอวิศวกร STB ตรวจสอบ","รอ M ตรวจสอบ","กำลังดำเนินงาน","เสร็จสิ้น"];
+const JOB_NEXT = ["หัวหน้าช่างรับเรื่อง","วิศวกร STB ตรวจสอบแล้ว","M ตรวจสอบ / อนุมัติแล้ว","ดำเนินงานเสร็จ ปิดงาน"];
+function thShort(iso){ if(!iso) return ""; const [y,m,d]=iso.slice(0,10).split("-").map(Number); return `${d} ${TH_M[m-1]} ${String(y+543).slice(-2)}`; }
+function jobAge(j){ return Math.max(0, daysBetween(String(j.updatedAt||j.createdAt).slice(0,10), todayISO())); }
+function stepsHTML(stage){
+  return `<div class="steps">${JOB_STAGES.map((s,i)=>{ const c = (i<stage || stage===4)? "done" : i===stage? "cur" : "";
+    return `<div class="step ${c}"><i>${c==="done"?"✓":""}</i><span>${s}</span></div>`; }).join("")}</div>`;
+}
+function jobDates(j){ return j.start? `${thShort(j.start)} → ${thShort(j.end||j.start)} (${daysBetween(j.start, j.end||j.start)+1} วัน)` : "ยังไม่กำหนดวัน"; }
+function jobCard(j){
+  const u=BY_ID[j.assetId]||{tag:j.tag,name:"",group:""}, age=jobAge(j);
+  return `<button class="jcard" data-job="${esc(j.id)}">
+    <div class="jtop"><span class="jid">${esc(j.id)}</span>${j.stage===0?`<span class="chip jnew">🔔 แจ้งเข้ามาใหม่</span>`:""}<span class="chip jcat">${DAILY_FORMS[formOf(u)].name} ชำรุด</span></div>
+    <h3>${esc(u.tag)}</h3><p class="jissue">${esc(j.title)}</p>
+    <p class="jmeta">📍 ${esc(u.group||"")}${u.name? " · "+esc(u.name):""}</p>
+    <p class="jmeta">📅 ${jobDates(j)}</p>
+    ${stepsHTML(j.stage)}
+    <div class="jfoot ${j.stage===4?"fin":""}"><span>${JOB_STATUS[j.stage]}</span>${j.stage<4 && age>=1? `<span class="chip jage">ค้าง ${age} วัน</span>`:""}</div></button>`;
+}
+function renderJobs(){
+  const q=$("#jq").value.trim().toLowerCase(), st=$("#jst").value, c=[0,0,0,0,0];
+  jobs.forEach(j=>c[j.stage]++);
+  $("#jstrip").innerHTML = `<button class="stat warn" data-js="0"><b>${c[0]}</b><span>แจ้งเข้ามาใหม่</span></button>
+    <button class="stat" data-js="12"><b>${c[1]+c[2]}</b><span>รอวิศวกร STB / M</span></button>
+    <button class="stat bad" data-js="3"><b>${c[3]}</b><span>กำลังดำเนินงาน</span></button>
+    <button class="stat ok" data-js="4"><b>${c[4]}</b><span>เสร็จสิ้น</span></button>`;
+  $("#jstrip").querySelectorAll("[data-js]").forEach(b=>b.onclick=()=>{ $("#jst").value=b.dataset.js; renderJobs(); });
+  const list = jobs.filter(j=>{
+    if(st==="" && j.stage>=4) return false;
+    if(st==="12"){ if(j.stage!==1 && j.stage!==2) return false; } else if(st!=="" && st!=="all" && String(j.stage)!==st) return false;
+    if(q && !(j.id+" "+j.tag+" "+(BY_ID[j.assetId]?.tag||"")+" "+j.title+" "+j.detail+" "+j.by).toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>b.id.localeCompare(a.id));
+  $("#jlist").innerHTML = list.length? list.map(jobCard).join("")
+    : `<div class="empty" style="grid-column:1/-1">${dbReady? (jobs.length? "ไม่มีงานในสถานะนี้" : "ยังไม่มีงานซ่อม งานจะเข้ามาเองเมื่อใบตรวจประจำวันพบ ✗ หรือชำรุด หรือกด “+ แจ้งงานซ่อม”") : "กำลังโหลด…"}</div>`;
+}
+["#jq","#jst"].forEach(s=>$(s).addEventListener("input", renderJobs));
+$("#jnewbtn").onclick = ()=>newJob(null);
+
+function overlayBox(width, label){
+  const ov=document.createElement("div"); ov.className="overlay"; ov.dataset.dlg="1";
+  ov.innerHTML=`<div class="scanbox" style="width:min(${width}px,100%)" role="dialog" aria-label="${esc(label)}"></div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener("click", e=>{ if(e.target===ov) ov.remove(); });
+  return ov;
+}
+function openJob(id){
+  const j=jobs.find(x=>x.id===id); if(!j) return;
+  const u=BY_ID[j.assetId]||{tag:j.tag,name:"",group:""};
+  const ov=overlayBox(760, "งาน "+j.id), box=ov.firstElementChild;
+  box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div style="min-width:0"><span class="jid">${esc(j.id)}</span> <span class="chip jcat" style="margin-left:4px">${DAILY_FORMS[formOf(u)].name} ชำรุด</span>
+        <h2 style="font-size:1.15rem;margin-top:4px">${esc(u.tag)} · ${esc(j.title)}</h2>
+        <p class="jmeta">📍 ${esc(u.group||"")}${u.name? " · "+esc(u.name):""}<br>แจ้งเมื่อ ${esc(j.createdAt)} โดย ${esc(j.by)} · ที่มา: ${esc(j.source||"-")}<br>📅 ${jobDates(j)}</p></div>
+      <button class="btn" data-x>ปิด</button></div>
+    ${stepsHTML(j.stage)}
+    <div class="jfoot ${j.stage===4?"fin":""}"><span>${JOB_STATUS[j.stage]}</span>${j.stage<4 && jobAge(j)>=1? `<span class="chip jage">ค้าง ${jobAge(j)} วัน</span>`:""}</div>
+    ${j.detail? `<p style="margin:0">${esc(j.detail)}</p>`:""}
+    <div id="jph">${galleryHTML("รูปก่อนทำ", [])}${galleryHTML("รูปหลังทำ", [])}</div>
+    <div><h3 class="h3s">ประวัติการดำเนินงาน</h3><div class="tl">${j.history.slice().reverse().map(h=>`<div><b>${esc(h.act==="back"?"ตีกลับไป "+JOB_STAGES[h.s] : h.act==="advance"? JOB_STAGES[h.from??(h.s-1)]+" ✓" : h.act==="note"? "บันทึกความคืบหน้า" : "แจ้งงาน")}</b> · ${esc(h.by)} <small>${esc(h.at)}</small>${h.note? `<br>${esc(h.note)}`:""}</div>`).join("")}</div></div>
+    ${j.stage<4? `<form id="jform" class="doc" novalidate style="padding:12px;display:flex;flex-direction:column;gap:10px">
+      <h3 class="h3s">อัปเดตงาน · ขั้นถัดไป: ${JOB_NEXT[j.stage]}</h3>
+      <div class="grid2"><label class="field">ชื่อผู้ดำเนินการ *<input id="j-by" autocomplete="name" value="${esc(store.get("pm.tech")||"")}"></label>
+        <label class="field">วันเริ่ม<input type="date" id="j-start" value="${esc(j.start||"")}"></label>
+        <label class="field">วันเสร็จ (กำหนด)<input type="date" id="j-end" value="${esc(j.end||"")}"></label></div>
+      <label class="field">บันทึก / ความคืบหน้า<input id="j-note" placeholder="เช่น สั่งอะไหล่แล้ว รอของ 3 วัน"></label>
+      <div><span class="muted" style="font-size:.85rem">แนบรูปหลังทำ${j.stage===3? " (ต้องมีอย่างน้อย 1 รูปเพื่อปิดงาน)":""}</span>${phBoxHTML("after","")}</div>
+      <div id="j-msg"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        ${j.stage>0? `<button type="button" class="btn" data-act="back">ตีกลับ</button>`:""}
+        <button type="button" class="btn" data-act="note">บันทึกความคืบหน้า</button>
+        <button type="button" class="btn primary" data-act="advance">✓ ${JOB_NEXT[j.stage]}</button></div></form>` : ""}`;
+  box.querySelector("[data-x]").onclick=()=>ov.remove();
+  if(j.beforeN || j.afterN){
+    box.querySelector("#jph").innerHTML = `<p class="muted">กำลังโหลดรูปจาก Google Drive…</p>`;
+    server("getJob", j.id).then(r=>{ const el=box.querySelector("#jph"); if(el) el.innerHTML = galleryHTML("รูปก่อนทำ", r.before)+galleryHTML("รูปหลังทำ", r.after); })
+      .catch(err=>{ const el=box.querySelector("#jph"); if(el) el.innerHTML=`<p class="notice bad">โหลดรูปไม่ได้: ${esc(err?.message||"")}</p>`; });
+  }
+  const form=box.querySelector("#jform"); if(!form) return;
+  photoBox(form, "after", MAX_SIDE);
+  const val=s=>form.querySelector(s).value.trim();
+  const msg=t=>{ form.querySelector("#j-msg").innerHTML = t? `<div class="notice bad">${t}</div>` : ""; };
+  form.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
+    const act=b.dataset.act, by=val("#j-by"), note=val("#j-note"), start=val("#j-start"), end=val("#j-end"), after=photosOut(form,"after");
+    if(!by) return msg("กรุณาใส่ชื่อผู้ดำเนินการ");
+    if(act==="advance" && j.stage===3 && !j.afterN && !after.length) return msg("ต้องแนบรูปหลังทำอย่างน้อย 1 รูปก่อนปิดงาน");
+    if(act==="note" && !note && !after.length && start===(j.start||"") && end===(j.end||"")) return msg("ยังไม่มีอะไรให้บันทึก ใส่ข้อความ วันที่ หรือแนบรูป");
+    if(act==="back" && !note) return msg("กรุณาใส่เหตุผลที่ตีกลับในช่องบันทึก");
+    if(start && end && end<start) return msg("วันเสร็จต้องไม่ก่อนวันเริ่ม");
+    store.set("pm.tech", by); msg("");
+    form.querySelectorAll("button").forEach(x=>x.disabled=true);
+    b.textContent = after.length? `กำลังบันทึกและอัปโหลดรูป ${after.length} รูป…` : "กำลังบันทึก…";
+    server("updateJob", {id:j.id, action:act, by, note, start, end, after})
+      .then(data=>{ applyData(data); ov.remove(); render();
+        toast(act==="advance"? `${j.id} → ${JOB_STATUS[j.stage+1]}` : act==="back"? `${j.id} ตีกลับไป ${JOB_STAGES[j.stage-1]}` : `บันทึกความคืบหน้า ${j.id} แล้ว`); })
+      .catch(err=>{ form.querySelectorAll("button").forEach(x=>x.disabled=false); b.textContent="ลองอีกครั้ง"; msg(`ยังไม่ได้บันทึก: ${esc(err?.message||"เชื่อมต่อไม่สำเร็จ")}`); });
+  });
+}
+
+function newJob(presetId){
+  const ov=overlayBox(640, "แจ้งงานซ่อม"), box=ov.firstElementChild;
+  box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="font-size:1.1rem">แจ้งงานซ่อม</h2><button class="btn" data-x>ปิด</button></div>
+    <form id="nform" novalidate style="display:flex;flex-direction:column;gap:10px">
+      <label class="field">อุปกรณ์ *<select id="n-unit">${UNITS.map(u=>`<option value="${esc(u.id)}" ${u.id===presetId?"selected":""}>${esc(u.tag)} · ${esc(u.name)}</option>`).join("")}</select></label>
+      <label class="field">อาการ / หัวข้อ *<input id="n-title" list="n-items" placeholder="เช่น ปุ่มกดชั้น 3 ไม่ติด"><datalist id="n-items"></datalist></label>
+      <label class="field">รายละเอียด<textarea id="n-detail" rows="3"></textarea></label>
+      <label class="field">ชื่อผู้แจ้ง *<input id="n-by" autocomplete="name" value="${esc(store.get("pm.tech")||"")}"></label>
+      <div><span class="muted" style="font-size:.85rem">รูปหน้างาน ก่อนทำ</span>${phBoxHTML("before","")}</div>
+      <div id="n-msg"></div>
+      <div style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit" id="n-save">แจ้งงาน</button></div></form>`;
+  box.querySelector("[data-x]").onclick=()=>ov.remove();
+  const form=box.querySelector("#nform");
+  photoBox(form, "before", MAX_SIDE);
+  const fillItems=()=>{ const u=BY_ID[form.querySelector("#n-unit").value]; form.querySelector("#n-items").innerHTML = DAILY_FORMS[formOf(u)].items.map(i=>`<option>${esc(i[1])}</option>`).join(""); };
+  form.querySelector("#n-unit").onchange=fillItems; fillItems();
+  form.addEventListener("submit", e=>{ e.preventDefault();
+    const val=s=>form.querySelector(s).value.trim(), u=BY_ID[val("#n-unit")], title=val("#n-title"), by=val("#n-by");
+    const msg=t=>form.querySelector("#n-msg").innerHTML=`<div class="notice bad">${t}</div>`;
+    if(!u) return msg("กรุณาเลือกอุปกรณ์"); if(!title) return msg("กรุณาใส่อาการ / หัวข้อ"); if(!by) return msg("กรุณาใส่ชื่อผู้แจ้ง");
+    store.set("pm.tech", by);
+    const btn=form.querySelector("#n-save"); btn.disabled=true; btn.textContent="กำลังแจ้งงาน…";
+    server("createJob", {assetId:u.id, tag:u.tag, form:formOf(u), title, detail:val("#n-detail"), by, before:photosOut(form,"before")})
+      .then(data=>{ applyData(data); ov.remove(); $("#jst").value=""; setTab("jobs"); toast(`แจ้งงานซ่อม ${u.tag} แล้ว`); })
+      .catch(err=>{ btn.disabled=false; btn.textContent="แจ้งงาน"; msg(`ยังไม่ได้แจ้ง: ${esc(err?.message||"เชื่อมต่อไม่สำเร็จ")}`); });
+  });
+}
+
 // ---------- tabs & hash ----------
 function setTab(t){
   tab=t;
-  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===t || (t==="unit"&&b.dataset.tab==="units"))));
-  $("#v-units").hidden = t!=="units"; $("#v-unit").hidden = t!=="unit"; $("#v-history").hidden = t!=="history"; $("#v-qr").hidden = t!=="qr";
+  const hl = {unit:"units", check:"daily"}[t] || t;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===hl)));
+  ["units","unit","daily","check","jobs","history","qr"].forEach(k=>{ $("#v-"+k).hidden = k!==t; });
   render();
 }
-document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>{ formUnit=null; setTab(b.dataset.tab); });
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>{ formUnit=null; checkUnit=null; setTab(b.dataset.tab); });
 ["#q","#fb","#fs"].forEach(s=>$(s).addEventListener("input", renderList));
 function render(){
   if(tab==="units"){ renderStrip(); renderList(); }
   else if(tab==="unit"){ if(!document.querySelector("#pmform")) renderUnit(); }
   else if(tab==="history") renderHistory();
   else if(tab==="qr") renderQR();
+  else if(tab==="daily") renderDaily();
+  else if(tab==="check"){ if(!document.querySelector("#dcform") && checkUnit) renderCheck(); }
+  else if(tab==="jobs") renderJobs();
 }
 // ---------- data (Google Sheet ผ่าน google.script.run) ----------
 // lifts by number (L1, L2 … L46), then dumbwaiters, escalators, anything else; groups follow from that order
@@ -872,7 +1347,7 @@ function openScanner(){
   </div>`;
   document.body.appendChild(ov);
   const msg=t=>ov.querySelector("#scanmsg").textContent=t;
-  const done=id=>{ closeScanner(); showUnit(id,true); toast("เปิดฟอร์ม PM "+BY_ID[id].tag); };
+  const done=id=>{ closeScanner(); showCheck(id); toast("เปิดใบตรวจประจำวัน "+BY_ID[id].tag); };
   ov.querySelector("#scanclose").onclick=closeScanner;
   ov.addEventListener("click",e=>{ if(e.target===ov) closeScanner(); });
   ov.querySelector("#scango").onclick=()=>{ const id=idFromScan(ov.querySelector("#scantag").value); id? done(id) : msg("ไม่พบเลขลิฟต์นี้ ลองพิมพ์ใหม่ เช่น L16"); };
@@ -914,9 +1389,13 @@ function applyData(data){
   BY_ID = Object.fromEntries(UNITS.map(u=>[u.id,u]));
   fillGroupSelect("#fb"); fillGroupSelect("#qb");
   records = data.records.filter(r=>r.assetId && r.date);
+  daily = (data.daily||[]).filter(r=>r.assetId && r.date);
+  jobs = data.jobs||[];
   if(first) UNITS.forEach(u=>qrSel.add(u.id));
   dbReady = true;
-  $("#conn").textContent = `${UNITS.length} ตัว · ${records.length} บันทึก PM`;
+  const openN = jobs.filter(j=>j.stage<4).length;
+  $("#jbadge").innerHTML = openN? `<span class="chip bad" style="padding:0 7px">${openN}</span>` : "";
+  $("#conn").textContent = `${UNITS.length} ตัว · ${records.length} บันทึก PM · งานค้าง ${openN}`;
 }
 let loadTimer=null;
 function load(){
@@ -929,7 +1408,7 @@ function load(){
       if(!data.assets.length){ showBanner("bad","ชีต Assets ยังไม่มีรายชื่อลิฟต์","เปิด Apps Script แล้วรันฟังก์ชัน setup หนึ่งครั้ง ระบบจะใส่ลิฟต์ทั้ง 59 ตัวให้"); }
       else showBanner();
       applyData(data);
-      if(START_ID && BY_ID[START_ID]){ const id=START_ID; START_ID=null; showUnit(id, true); }
+      if(START_ID && BY_ID[START_ID]){ const id=START_ID; START_ID=null; showCheck(id); toast("เปิดใบตรวจประจำวัน "+BY_ID[id].tag); }
       else render();
     })
     .catch(err=>{
@@ -953,7 +1432,7 @@ if(HAS_GAS){
   $("#list").innerHTML = "";
 }
 // refresh every 2 minutes so several technicians see each other's work, but never while a form is open
-setInterval(()=>{ if(dbReady && !document.querySelector("#pmform") && !document.hidden) load(); }, 120000);
+setInterval(()=>{ if(dbReady && !document.querySelector("#pmform, #dcform, .overlay") && !document.hidden) load(); }, 120000);
 </script>
 <div id="printarea"></div>
 </body></html>
