@@ -223,7 +223,18 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
 .dph{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .dph .btn{padding:6px 10px;font-size:.84rem}
 .thumbs{display:flex;gap:6px;flex-wrap:wrap;width:100%}
+.phmsg{width:100%;background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:8px 10px;font-size:.86rem;font-weight:500}
+.phbusy{font-size:.82rem}
 .thumbs:empty{display:none}
+.slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:760px){.slots{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}}
+.slot{border:1.5px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.slot.has{border-color:var(--ok)} .slot.miss{border-color:var(--bad);background:var(--bad-bg)}
+.slot-img{aspect-ratio:4/3;border-radius:8px;background:var(--none-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:1.8rem}
+.slot-img img{width:100%;height:100%;object-fit:cover;display:block}
+.slot-t{font-size:.86rem;font-weight:600;line-height:1.3}
+.slot-btns{display:flex;gap:6px;flex-wrap:wrap} .slot-btns .btn{padding:6px 10px;font-size:.84rem}
+.req{color:var(--bad)}
 .thumb{position:relative;width:76px}
 .thumb img{width:76px;height:76px;object-fit:cover;border-radius:6px;display:block;max-width:100%;border:2px solid var(--line)}
 .thumb.b img{border-color:var(--warn)} .thumb.a img{border-color:var(--ok)}
@@ -355,12 +366,14 @@ th{color:var(--muted);font-weight:600;background:var(--bg)}
     </div>
   </section>
 </main>
+<p class="muted" id="ver" style="font-size:.75rem;text-align:center;margin:24px 0 0"></p>
 </div>
 
 <script>
 // ใช้เฉพาะเมื่อวางไฟล์นี้บน GitHub Pages: ใส่ลิงก์ Web app ของ Apps Script (ลงท้ายด้วย /exec)
 // ถ้าเปิดผ่าน Apps Script โดยตรง ปล่อยว่างไว้ได้
 const API_URL = "https://script.google.com/macros/s/AKfycbyleaYN6UoUiQ9S0LDmmHfgG1fNBUxfSIm9gqPHw58ExM7R9qJr7cbDCgHOkmZk9DYZoA/exec";
+const PAGE_VERSION = "2569-11-17 รูป 4 ช่อง";
 
 let APP_URL = "", UNITS = [], BY_ID = {}, START_ID = null;
 const HAS_GAS = !!(window.google && google.script && google.script.run);
@@ -694,20 +707,36 @@ function renderForm(){
   form.addEventListener("submit", e=>{ e.preventDefault(); savePM(form, u); });
 }
 
-// phone photos are 3–12 MB; shrink to ≤1280 px JPEG (~150–300 KB) before sending to Apps Script
-function shrinkImage(file, max=1280, quality=0.72){
-  return new Promise((res,rej)=>{
-    const url=URL.createObjectURL(file), img=new Image();
-    img.onload=()=>{
-      const s=Math.min(1, max/Math.max(img.naturalWidth, img.naturalHeight));
-      const c=document.createElement("canvas"); c.width=Math.round(img.naturalWidth*s); c.height=Math.round(img.naturalHeight*s);
-      const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
-      URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", quality));
-    };
-    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("bad image")); };
-    img.src=url;
-  });
+// open a photo file three ways, because phones and the Apps Script frame each break a different one:
+// createImageBitmap (fast, low memory), then FileReader data URL, then a blob URL
+function decodeImg(src){ return new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>res(img); img.onerror=()=>rej(new Error("decode")); img.src=src; }); }
+async function loadImage(file){
+  if(window.createImageBitmap){ try{ return await createImageBitmap(file); }catch(e){} }
+  try{
+    const url=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error||new Error("read")); r.readAsDataURL(file); });
+    return await decodeImg(url);
+  }catch(e){}
+  const u=URL.createObjectURL(file);
+  try{ return await decodeImg(u); } finally { setTimeout(()=>URL.revokeObjectURL(u), 2000); }
 }
+// phone photos are 3–12 MB; shrink to ≤1280 px JPEG (~150–300 KB) before sending to Apps Script
+async function shrinkImage(file, max=1280, quality=0.72){
+  if(!file || !file.size) throw new Error("ได้ไฟล์รูปว่างเปล่า (มักเกิดเมื่อเปิดแอพผ่าน Facebook / LINE หรือเลือกรูปที่ยังไม่ได้ดาวน์โหลดจากคลาวด์)");
+  let img;
+  try{ img=await loadImage(file); }
+  catch(e){ throw new Error(`เปิดไฟล์รูปไม่ได้ (ชนิด ${file.type||"ไม่ทราบ"}, ${Math.round(file.size/1024)} KB)`); }
+  const w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+  if(!w || !h) throw new Error("รูปไม่มีขนาด อ่านไม่ได้");
+  const s=Math.min(1, max/Math.max(w,h));
+  const c=document.createElement("canvas"); c.width=Math.round(w*s); c.height=Math.round(h*s);
+  const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+  if(img.close) img.close();
+  let out;
+  try{ out=c.toDataURL("image/jpeg", quality); }catch(e){ throw new Error("เบราว์เซอร์ไม่ยอมให้แปลงรูป ("+(e.name||"error")+")"); }
+  if(!out || out.length<200) throw new Error("แปลงรูปไม่สำเร็จ");
+  return out;
+}
+const IN_APP_BROWSER = /FBAN|FBAV|FB_IAB|FBIOS|Line\/|Instagram|MicroMessenger/i.test(navigator.userAgent||"");
 
 // finger/mouse signature pad; exports a small PNG so it fits in one sheet cell
 function sigPad(canvas){
@@ -954,6 +983,13 @@ const DLABEL = Object.fromEntries(Object.values(DAILY_FORMS).flatMap(f=>f.items)
 // job tracker: photos per update; daily check: photos per item, per side (before / after)
 const MAX_SIDE = 4;
 const MAX_ITEM_PH = 3;
+// รูปหน้างานของใบตรวจประจำวัน: 4 ช่อง ช่องละ 1 รูป [key, ชื่อ, บังคับถ่าย]
+const PHOTO_SLOTS = {
+  L:[["ph1","ภาพรวมห้องโดยสาร",1],["ph2","หน้าลิฟต์ (โถงหน้าชั้น)",1],["ph3","กล่องคอนโทรล ขณะตั้งค่า",1],["ph4","ภาพเพิ่มเติม (ถ้ามี)",0]],
+  E:[["ph1","ภาพรวมบันไดเลื่อน",1],["ph2","ทางขึ้น-ลง (หวี / Demarcation)",1],["ph3","ตู้คอนโทรล ขณะตั้งค่า",1],["ph4","ภาพเพิ่มเติม (ถ้ามี)",0]],
+  D:[["ph1","ภาพรวมตู้ Dumb Waiter",1],["ph2","หน้าลิฟต์ / ประตู",1],["ph3","กล่องคอนโทรล ขณะตั้งค่า",1],["ph4","ภาพเพิ่มเติม (ถ้ามี)",0]]
+};
+const slotsOf = f=>PHOTO_SLOTS[f]||PHOTO_SLOTS.L;
 let daily = [], jobs = [], checkUnit = null;
 function formOf(u){
   if(!u) return "L";
@@ -1021,7 +1057,7 @@ const photosOut = (root,key)=>(root._ph?.[key]||[]).map(p=>({data:p.data.split("
 
 function showCheck(id){ if(!BY_ID[id]) return; checkUnit=id; formUnit=null; setTab("check"); renderCheck(); window.scrollTo({top:0}); }
 function renderCheck(){
-  const u=BY_ID[checkUnit], f=formOf(u), F=DAILY_FORMS[f], today=todayISO(), prev=latestDaily(u.id,today);
+  const u=BY_ID[checkUnit], f=formOf(u), F=DAILY_FORMS[f], S=slotsOf(f), today=todayISO(), prev=latestDaily(u.id,today);
   const openJ = jobs.filter(j=>j.assetId===u.id && j.stage<4);
   const v=$("#v-check");
   v.innerHTML = `<div class="sheet">
@@ -1030,6 +1066,7 @@ function renderCheck(){
         <div style="min-width:0"><h2 style="font-size:1.15rem">${esc(u.name)}</h2><span class="muted" style="font-size:.85rem">${esc(u.group)}</span></div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" id="c-back">← กลับ</button><button class="btn" data-pm="${u.id}">บันทึก PM แทน</button><button class="btn" data-newjob="${u.id}">แจ้งซ่อม</button></div>
     </div>
+    ${IN_APP_BROWSER? `<div class="notice bad"><b>เปิดแอพอยู่ในเบราว์เซอร์ของ Facebook / LINE</b> ซึ่งมักถ่ายรูปแนบไม่ได้ กด ⋮ มุมขวาบน แล้วเลือก “เปิดใน Chrome” (หรือเปิดในเบราว์เซอร์)</div>`:""}
     ${prev? `<div class="notice ok">วันนี้ตรวจแล้วเวลา ${esc(prev.time)} น. โดย ${esc(prev.inspector)} · ตรวจซ้ำได้ ใบตรวจประจำวันจะใช้ผลล่าสุด</div>`:""}
     ${openJ.length? `<div class="notice bad">มีงานซ่อมค้างอยู่ ${openJ.length} งาน: ${openJ.map(j=>`<a href="#" data-job="${esc(j.id)}" style="color:inherit;font-weight:700">${esc(j.id)}</a> ${esc(j.title)} (${esc(j.status)})`).join(" · ")}</div>`:""}
     <form class="doc" id="dcform" novalidate>
@@ -1043,17 +1080,22 @@ function renderCheck(){
         </div></div>
       <div class="sec"><div class="sec-h"><span class="sec-n">2</span><h3>รายการที่ตรวจเช็ค (${F.items.length} ข้อ)</h3><button type="button" class="btn" id="d-allok">✓ ปกติทุกข้อ</button></div>
         <div class="legend">${DCODES.map(c=>`<span><b>${c[1]}</b> ${c[3]}</span>`).join("")}</div>
-        <label class="legend" style="align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="d-gal"> เลือกรูปจากคลังภาพแทนการเปิดกล้อง</label>
         <div>${F.items.map(([k,t],i)=>`<div class="ditem" data-k="${k}"><span class="no">${i+1}</span><span class="q">${esc(t)}</span>
           <div class="dcodes" role="radiogroup" aria-label="${esc(t)}">${DCODES.map(c=>`<label><input type="radio" name="d-${k}" value="${c[0]}"><span class="c-${c[0]}"><i>${c[1]}</i>${c[2]}</span></label>`).join("")}</div>
-          <div class="dx" hidden><input type="number" min="1" step="1" inputmode="numeric" id="dn-${k}" placeholder="จำนวนชิ้น" hidden><input id="dt-${k}" placeholder="รายละเอียด"></div>
-          <div class="dph" data-iph="${k}">
-            <label class="btn">📷 ก่อนทำ<input type="file" accept="image/&#42;" capture="environment" data-side="b" hidden></label>
-            <label class="btn">📷 หลังทำ<input type="file" accept="image/&#42;" capture="environment" data-side="a" hidden></label>
-            <div class="thumbs"></div></div></div>`).join("")}</div></div>
-      <div class="sec"><div class="sec-h"><span class="sec-n">3</span><h3>รายการตรวจสอบและแก้ไขเพิ่มเติม</h3></div>
+          <div class="dx" hidden><input type="number" min="1" step="1" inputmode="numeric" id="dn-${k}" placeholder="จำนวนชิ้น" hidden><input id="dt-${k}" placeholder="รายละเอียด"></div></div>`).join("")}</div></div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">3</span><h3>ภาพถ่ายหน้างาน (${S.length} รูป)</h3></div>
+        <p class="muted" style="margin:0 0 8px;font-size:.88rem">ช่องที่มี <b class="req">*</b> ต้องถ่ายก่อนบันทึก · กดถ่ายใหม่เพื่อเปลี่ยนรูปได้</p>
+        <label class="legend" style="align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="d-gal"> เลือกรูปจากคลังภาพแทนการเปิดกล้อง</label>
+        <div class="slots">${S.map(([k,t,req],i)=>`<div class="slot" data-slot="${k}">
+          <div class="slot-img"><span class="slot-ph">📷</span></div>
+          <div class="slot-t">${i+1}. ${esc(t)}${req? ` <b class="req">*</b>`:""}</div>
+          <div class="slot-btns"><label class="btn"><span>📷 ถ่ายรูป</span><input type="file" accept="image/&#42;" capture="environment" data-slotin hidden></label>
+            <button type="button" class="btn" data-slotrm hidden>ลบ</button></div>
+          <span class="phbusy muted" hidden>กำลังเตรียมรูป…</span>
+          <div class="phmsg" hidden></div></div>`).join("")}</div></div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">4</span><h3>รายการตรวจสอบและแก้ไขเพิ่มเติม</h3></div>
         <label class="field">หมายเหตุ<textarea id="d-rem" rows="3" placeholder="เช่น ไฟในตู้ดับ 1 ดวง แจ้งหัวหน้าช่างแล้ว"></textarea></label></div>
-      <div class="sec"><div class="sec-h"><span class="sec-n">4</span><h3>ผู้ตรวจสอบ</h3></div>
+      <div class="sec"><div class="sec-h"><span class="sec-n">5</span><h3>ผู้ตรวจสอบ</h3></div>
         <div class="sigs">
           <div class="sig signblk"><span class="muted">ลายเซ็นผู้ตรวจสอบ *</span>
             <canvas id="sig-insp" aria-label="ช่องเซ็นชื่อผู้ตรวจสอบ"></canvas>
@@ -1074,30 +1116,47 @@ function renderCheck(){
   const form=v.querySelector("#dcform"), total=F.items.length;
   form._sig = { insp: sigPad(form.querySelector("#sig-insp")), sup: sigPad(form.querySelector("#sig-sup")) };
   form.querySelectorAll("[data-sclear]").forEach(b=>b.onclick=()=>form._sig[b.dataset.sclear].clear());
-  // photos per checklist item: form._iph[item] = {b:[dataURL…] before, a:[…] after}
-  form._iph = Object.fromEntries(F.items.map(([k])=>[k,{b:[],a:[]}]));
-  const nPhotos = ()=>Object.values(form._iph).reduce((n,p)=>n+p.b.length+p.a.length,0);
-  const drawThumbs = k=>{
-    const P=form._iph[k];
-    form.querySelector(`[data-iph="${k}"] .thumbs`).innerHTML = [...P.b.map((src,i)=>["b",i,src]), ...P.a.map((src,i)=>["a",i,src])]
-      .map(([s,i,src])=>`<div class="thumb ${s}"><img src="${src}" alt="${s==="b"?"ก่อนทำ":"หลังทำ"} ${i+1}"><b>${s==="b"?"ก่อน":"หลัง"}</b><button type="button" data-rm="${s}" data-i="${i}" aria-label="ลบรูป">✕</button></div>`).join("");
+  // one photo per slot: form._slot[slotKey] = dataURL
+  form._slot = {};
+  const nPhotos = ()=>Object.keys(form._slot).length;
+  const drawSlot = k=>{
+    const el=form.querySelector(`[data-slot="${k}"]`), src=form._slot[k];
+    el.classList.toggle("has", !!src); el.classList.remove("miss");
+    el.querySelector(".slot-img").innerHTML = src? `<img src="${src}" alt="">` : `<span class="slot-ph">📷</span>`;
+    el.querySelector("label.btn span").textContent = src? "↻ ถ่ายใหม่" : "📷 ถ่ายรูป";
+    el.querySelector("[data-slotrm]").hidden = !src;
     update();
   };
+  // a photo problem stays written under the slot (a toast is easy to miss while coming back from the camera)
+  const phMsg = (k, text)=>{ const el=form.querySelector(`[data-slot="${k}"] .phmsg`); el.hidden=!text; el.textContent=text? "⚠ "+text : ""; };
+  let waiting=null;
+  form.addEventListener("click", e=>{
+    const inp=e.target.closest("label")?.querySelector("input[data-slotin]"); if(!inp) return;
+    waiting={k:inp.closest("[data-slot]").dataset.slot, at:Date.now()};
+  });
+  // back from the camera with no change event at all: the browser dropped the photo
+  const backFromCamera = ()=>{ const w=waiting; if(!w || !form.isConnected || document.hidden) return;
+    setTimeout(()=>{ if(waiting===w && Date.now()-w.at>1500){ waiting=null;
+      phMsg(w.k, IN_APP_BROWSER? "เบราว์เซอร์ของ Facebook / LINE ไม่ส่งรูปมาให้แอพ กด ⋮ แล้วเลือก “เปิดใน Chrome”" : "ยังไม่ได้รับรูปจากกล้อง ถ้าถ่ายแล้วแต่รูปไม่ขึ้น ลองติ๊ก “เลือกรูปจากคลังภาพแทนการเปิดกล้อง” แล้วเลือกรูปที่ถ่ายไว้"); } }, 1200); };
+  window.addEventListener("focus", backFromCamera);
+  document.addEventListener("visibilitychange", backFromCamera);
   form.addEventListener("change", async e=>{
-    const side=e.target.dataset?.side; if(!side) return;
-    const k=e.target.closest("[data-iph]").dataset.iph, list=form._iph[k][side], files=[...e.target.files];
+    if(!e.target.matches?.("[data-slotin]")) return;
+    waiting=null;
+    const box=e.target.closest("[data-slot]"), k=box.dataset.slot, file=(e.target.files||[])[0];
     e.target.value="";
-    for(const f of files){
-      if(list.length>=MAX_ITEM_PH){ toast(`ถ่าย${side==="b"?"ก่อนทำ":"หลังทำ"}ได้ข้อละไม่เกิน ${MAX_ITEM_PH} รูป`); break; }
-      try{ list.push(await shrinkImage(f, 1024, 0.7)); drawThumbs(k); }catch{ toast("เปิดรูปนี้ไม่ได้ ลองถ่ายใหม่"); }
-    }
+    if(!file){ phMsg(k, "ไม่ได้รับรูปจากกล้อง ลองถ่ายใหม่อีกครั้ง"); return; }
+    phMsg(k, ""); box.querySelector(".phbusy").hidden=false;
+    try{ form._slot[k] = await shrinkImage(file, 1024, 0.7); drawSlot(k); }
+    catch(err){ phMsg(k, (err?.message||"เปิดรูปไม่ได้")+(IN_APP_BROWSER? " · แนะนำเปิดแอพใน Chrome" : " · ลองถ่ายใหม่ หรือเลือกจากคลังภาพ")); }
+    box.querySelector(".phbusy").hidden=true;
   });
   form.addEventListener("click", e=>{
-    const rm=e.target.closest("[data-rm]"); if(!rm) return;
-    const k=rm.closest("[data-iph]").dataset.iph; form._iph[k][rm.dataset.rm].splice(+rm.dataset.i,1); drawThumbs(k);
+    const rm=e.target.closest("[data-slotrm]"); if(!rm) return;
+    const k=rm.closest("[data-slot]").dataset.slot; delete form._slot[k]; drawSlot(k);
   });
   form.querySelector("#d-gal").addEventListener("change", e=>{
-    form.querySelectorAll("[data-side]").forEach(inp=>{ if(e.target.checked){ inp.removeAttribute("capture"); inp.multiple=true; } else { inp.setAttribute("capture","environment"); inp.multiple=false; } });
+    form.querySelectorAll("[data-slotin]").forEach(inp=>{ if(e.target.checked) inp.removeAttribute("capture"); else inp.setAttribute("capture","environment"); });
   });
   const update = ()=>{
     const done=form.querySelectorAll(".dcodes input:checked").length;
@@ -1135,18 +1194,24 @@ function saveDaily(form, u, F, f){
   const noCount=Object.keys(counts).filter(k=>!counts[k]);
   if(noCount.length) return fail(`กรุณาใส่จำนวนชิ้นที่ชำรุด (ข้อ ${noCount.map(k=>F.items.findIndex(x=>x[0]===k)+1).join(", ")})`, form.querySelector("#dn-"+noCount[0]));
   const date=val("#d-date"); if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail("กรุณาเลือกวันที่ตรวจ", form.querySelector("#d-date"));
-  if(form._sig.insp.isEmpty()) return fail("กรุณาเซ็นชื่อผู้ตรวจสอบ (หัวข้อ 4)", form.querySelector("#sig-insp"));
+  const S=slotsOf(f), noPh=S.filter(([k,t,req])=>req && !form._slot[k]);
+  if(noPh.length){
+    noPh.forEach(([k])=>form.querySelector(`[data-slot="${k}"]`).classList.add("miss"));
+    return fail(`กรุณาถ่ายรูปให้ครบ (หัวข้อ 3): ${noPh.map(([k,t])=>esc(t)).join(", ")}`, form.querySelector(`[data-slot="${noPh[0][0]}"]`));
+  }
+  if(form._sig.insp.isEmpty()) return fail("กรุณาเซ็นชื่อผู้ตรวจสอบ (หัวข้อ 5)", form.querySelector("#sig-insp"));
   const who=val("#d-who").replace(/\s+/g," ");
-  if(!who) return fail("กรุณาใส่ชื่อ-นามสกุลผู้ตรวจสอบ (หัวข้อ 4)", form.querySelector("#d-who"));
-  if(!/\S+\s+\S+/.test(who)) return fail("กรุณาใส่ชื่อเต็ม ทั้งชื่อและนามสกุล (หัวข้อ 4)", form.querySelector("#d-who"));
+  if(!who) return fail("กรุณาใส่ชื่อ-นามสกุลผู้ตรวจสอบ (หัวข้อ 5)", form.querySelector("#d-who"));
+  if(!/\S+\s+\S+/.test(who)) return fail("กรุณาใส่ชื่อเต็ม ทั้งชื่อและนามสกุล (หัวข้อ 5)", form.querySelector("#d-who"));
+  S.forEach(([k,t])=>{ labels[k]=t; });
   const pos=val("#d-pos"), sup=val("#d-sup").replace(/\s+/g," ");
   if(!form._sig.sup.isEmpty() && !sup) return fail("ผู้ควบคุมงานเซ็นแล้ว กรุณาใส่ชื่อ-นามสกุลผู้ควบคุมงานด้วย", form.querySelector("#d-sup"));
   store.set("pm.tech", who); store.set("pm.pos", pos); if(sup) store.set("pm.sup", sup);
   const rec={assetId:u.id, tag:u.tag, form:f, date, time:val("#d-time")||nowHM(), inspector:who, position:pos, supervisor:sup,
     sigInsp:form._sig.insp.toData(), sigSup:form._sig.sup.toData(), checks, counts, notes, labels,
     remark:val("#d-rem"),
-    before: F.items.flatMap(([k,t])=>form._iph[k].b.map(src=>({data:src.split(",")[1], cap:t, k}))),
-    after: F.items.flatMap(([k,t])=>form._iph[k].a.map(src=>({data:src.split(",")[1], cap:t, k})))};
+    before: S.filter(([k])=>form._slot[k]).map(([k,t])=>({data:form._slot[k].split(",")[1], cap:t, k})),
+    after: []};
   const nBad=Object.values(checks).filter(v=>v==="x"||v==="n").length, nPh=rec.before.length+rec.after.length;
   const btn=form.querySelector("#d-save"); btn.disabled=true;
   btn.textContent = nPh? `กำลังบันทึกและอัปโหลดรูป ${nPh} รูป…` : "กำลังบันทึก…";
@@ -1177,9 +1242,10 @@ function viewDailyPhotos(row){
     const before=r.before||[], after=r.after||[];
     const keys=[...new Set([...before, ...after].map(p=>p.k||""))];
     const items=(DAILY_FORMS[r.form]||DAILY_FORMS.L).items.map(i=>i[0]);
-    keys.sort((a,b)=>(items.indexOf(a)+1||99)-(items.indexOf(b)+1||99));
-    const groups=keys.map(k=>[k? (DLABEL[k]||k) : "รูปทั่วไป",
-      [...before.filter(p=>(p.k||"")===k).map(p=>({...p, cap:"ก่อนทำ"})), ...after.filter(p=>(p.k||"")===k).map(p=>({...p, cap:"หลังทำ"}))]]);
+    keys.sort((a,b)=>(items.indexOf(a)+1||99)-(items.indexOf(b)+1||99) || a.localeCompare(b));
+    const isSlot=k=>/^ph\d$/.test(k);
+    const groups=keys.map(k=>[k? (DLABEL[k] || (before.find(p=>p.k===k)||{}).cap || k) : "รูปทั่วไป",
+      [...before.filter(p=>(p.k||"")===k).map(p=>({...p, cap:isSlot(k)? "":"ก่อนทำ"})), ...after.filter(p=>(p.k||"")===k).map(p=>({...p, cap:"หลังทำ"}))]]);
     return {title:`รูปหน้างาน · ${r.tag} · ${thDate(r.date)} ${r.time} น.`, groups};
   }));
 }
@@ -1447,15 +1513,15 @@ function openScanner(){
   ov.querySelector("#scango").onclick=()=>{ const id=idFromScan(ov.querySelector("#scantag").value); id? done(id) : msg("ไม่พบเลขลิฟต์นี้ ลองพิมพ์ใหม่ เช่น L16"); };
   ov.querySelector("#scantag").addEventListener("keydown",e=>{ if(e.key==="Enter") ov.querySelector("#scango").click(); });
   ov.querySelector("#scanfile").onchange=e=>{
-    const f=e.target.files[0]; if(!f) return; msg("กำลังอ่าน QR จากรูป…");
-    const img=new Image(); img.onload=()=>{
-      const s=Math.min(1,1400/Math.max(img.width,img.height)), c=document.createElement("canvas");
-      c.width=img.width*s; c.height=img.height*s; const x=c.getContext("2d"); x.drawImage(img,0,0,c.width,c.height);
+    const f=e.target.files[0]; if(!f){ msg("ไม่ได้รับรูปจากกล้อง ลองใหม่ หรือพิมพ์เลขลิฟต์แทน"); return; } msg("กำลังอ่าน QR จากรูป…");
+    loadImage(f).then(img=>{
+      const w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+      const s=Math.min(1,1400/Math.max(w,h)), c=document.createElement("canvas");
+      c.width=Math.round(w*s); c.height=Math.round(h*s); const x=c.getContext("2d"); x.drawImage(img,0,0,c.width,c.height);
       const r=window.jsQR && jsQR(x.getImageData(0,0,c.width,c.height).data,c.width,c.height);
       const id=r && idFromScan(r.data);
       id? done(id) : msg(r? "QR นี้ไม่ใช่ป้ายลิฟต์ในระบบ" : "อ่าน QR ในรูปไม่ได้ ถ่ายใหม่ให้ป้ายอยู่กลางภาพและไม่เบลอ");
-      URL.revokeObjectURL(img.src);
-    }; img.src=URL.createObjectURL(f);
+    }).catch(err=>msg("เปิดรูปไม่ได้: "+(err?.message||"")+" ลองถ่ายใหม่ หรือพิมพ์เลขลิฟต์แทน"));
   };
   if(!navigator.mediaDevices?.getUserMedia || !window.jsQR){ msg("เปิดกล้องในหน้านี้ไม่ได้ กด “ถ่ายรูปป้าย QR” แทน"); return; }
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(stream=>{
@@ -1490,6 +1556,8 @@ function applyData(data){
   const openN = jobs.filter(j=>j.stage<4).length;
   $("#jbadge").innerHTML = openN? `<span class="chip bad" style="padding:0 7px">${openN}</span>` : "";
   $("#conn").textContent = `${UNITS.length} ตัว · ${records.length} บันทึก PM · งานค้าง ${openN}`;
+  $("#conn").title = `หน้าแอพ ${PAGE_VERSION} · Code.gs ${data.codeVersion || "เวอร์ชันเก่า"}`;
+  $("#ver").textContent = `แอพ ${PAGE_VERSION} · Code ${data.codeVersion || "เก่า"}`;
 }
 let loadTimer=null;
 function load(){
